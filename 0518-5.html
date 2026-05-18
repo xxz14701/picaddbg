@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圖片加工 </title>
+    <!-- 引入 Tailwind CSS 提供精美現代的 UI 樣式 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 FontAwesome 圖示 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: 導入適合長輩閱讀的粗體字 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+            background-color: #fcf9f2; /* 柔和溫暖的米黃底 */
+        }
+        /* 隱藏滾動條但保持功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* 櫻花雨動畫特效 */
+        .sakura {
+            position: absolute;
+            background-color: #ffb7c5;
+            border-radius: 100% 0 100% 100%;
+            pointer-events: none;
+            z-index: 10;
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            0% {
+                top: -10%;
+                transform: translateX(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                top: 110%;
+                transform: translateX(100px) rotate(360deg);
+                opacity: 0.3;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <header class="bg-gradient-to-r from-red-500 via-amber-500 to-orange-600 text-white shadow-md px-4 py-4 md:py-6 text-center relative">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3 justify-center">
+                <span class="text-3xl md:text-4xl">🌸</span>
+                <h1 class="text-2xl md:text-3xl font-black tracking-wider">圖片加工</h1>
+                
+            </div>
+           
+        </div>
+    </header>
+
+    <!-- 主區塊：左右分欄，左邊是畫布，右邊是好讀的大控制面板 -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-2 py-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <section class="lg:col-span-6 flex flex-col items-center">
+            <!-- 畫布容器：維持 square 1:1 比例，最適合 LINE 傳送 -->
+            <div class="relative w-full max-w-[500px] aspect-square bg-white rounded-3xl shadow-2xl border-4 border-amber-300 overflow-hidden flex items-center justify-center">
+                
+                <!-- 櫻花雨動態特效疊加層 (僅預覽用) -->
+                <div id="effectOverlay" class="absolute inset-0 pointer-events-none hidden"></div>
+                
+                <!-- 核心 HTML5 Canvas -->
+                <canvas id="mainCanvas" width="800" height="800" class="w-full h-full object-contain cursor-default touch-none"></canvas>
+                
+                <!-- 畫布為空時的溫馨提示 -->
+                <div id="emptyHint" class="absolute pointer-events-none text-center p-6 text-slate-400">
+                    <i class="fa-regular fa-image text-6xl mb-3 text-amber-400 animate-bounce"></i>
+                    <p class="text-xl font-bold">點擊右側按鈕設定背景<br>開始製作精美問候卡！</p>
+                </div>
+            </div>
+
+            <!-- 畫布下方的快速操作提示 -->
+            <div class="mt-4 flex flex-wrap justify-center gap-3 w-full max-w-[500px]">
+                <button onclick="undo()" class="flex-1 bg-white hover:bg-amber-50 text-slate-700 py-3.5 px-4 rounded-2xl shadow-md border-2 border-slate-200 font-bold text-lg flex items-center justify-center gap-2 transition active:scale-95">
+                    <i class="fa-solid fa-rotate-left text-amber-500"></i> 上一步
+                </button>
+                <button onclick="clearCanvas()" class="flex-1 bg-white hover:bg-rose-50 text-rose-600 py-3.5 px-4 rounded-2xl shadow-md border-2 border-rose-200 font-bold text-lg flex items-center justify-center gap-2 transition active:scale-95">
+                    <i class="fa-solid fa-trash-can"></i> 全部重來
+                </button>
+            </div>
+            
+            <div class="mt-3 text-sm text-slate-500 text-center max-w-[500px]">
+                <i class="fa-solid fa-circle-info text-amber-600 mr-1"></i>
+                <span>提示：可以直接用手指或滑鼠拖曳，點擊圖片拉動邊角的<strong>「藍色圓球」</strong>與<strong>「綠色圓球」</strong>即可自由縮放與旋轉！</span>
+            </div>
+        </section>
+
+        <section class="lg:col-span-6 bg-white rounded-3xl shadow-xl p-4 md:p-6 border-2 border-amber-100 flex flex-col gap-6">
+            
+            <!-- 大分頁導覽列（字大、點擊範圍大） -->
+            <div class="flex border-b-4 border-amber-100 pb-2 overflow-x-auto no-scrollbar gap-2">
+                <button onclick="switchTab('bg')" id="tab-bg" class="tab-btn active shrink-0 px-4 py-3 rounded-2xl font-black text-lg md:text-xl transition-all duration-200 flex items-center gap-2 bg-amber-500 text-white shadow-md">
+                    🖼️ 設背景
+                </button>
+                <button onclick="switchTab('sticker')" id="tab-sticker" class="tab-btn shrink-0 px-4 py-3 rounded-2xl font-black text-lg md:text-xl text-slate-600 hover:bg-amber-50 transition-all duration-200 flex items-center gap-2">
+                    ✨ 加字與圖
+                </button>
+                <button onclick="switchTab('adjust')" id="tab-adjust" class="tab-btn shrink-0 px-4 py-3 rounded-2xl font-black text-lg md:text-xl text-slate-600 hover:bg-amber-50 transition-all duration-200 flex items-center gap-2">
+                    🎮 調整大小
+                </button>
+                <button onclick="switchTab('layers')" id="tab-layers" class="tab-btn shrink-0 px-4 py-3 rounded-2xl font-black text-lg md:text-xl text-slate-600 hover:bg-amber-50 transition-all duration-200 flex items-center gap-2">
+                    🗂️ 圖層管理
+                </button>
+            </div>
+
+            <!-- ================= STREAMING_CHUNK: 背景設定分頁 ================= -->
+            <div id="content-bg" class="tab-content flex flex-col gap-5">
+                <div>
+                    <h3 class="text-xl font-black text-slate-800 mb-1">🎁 第一步：選擇或自訂您的漂亮底圖</h3>
+                    
+                </div>
+
+                <!-- 背景分類大頁籤 (圖片/顏色/幾何星空) -->
+                <div class="flex bg-slate-100 p-1.5 rounded-2xl gap-2 text-sm font-bold">
+                    <button onclick="switchBgSubTab('photo')" id="subtab-photo" class="bg-white text-slate-800 flex-1 py-2 rounded-xl shadow text-center font-bold">🏞️ 照片圖庫</button>
+                    <button onclick="switchBgSubTab('generative')" id="subtab-generative" class="text-slate-600 hover:text-slate-900 flex-1 py-2 rounded-xl text-center font-bold">✨ 星空幾何</button>
+                    <button onclick="switchBgSubTab('color')" id="subtab-color" class="text-slate-600 hover:text-slate-900 flex-1 py-2 rounded-xl text-center font-bold">🎨 自訂純色/漸層</button>
+                </div>
+
+                <!-- 次分類 1：照片圖庫 (細分三大類，各10張) -->
+                <div id="bg-sub-photo" class="bg-sub-content flex flex-col gap-4">
+                    
+                    <!-- 圖片內部分類頁籤 -->
+                    <div class="flex gap-1.5 border-b border-slate-200 pb-1.5 overflow-x-auto no-scrollbar">
+                        <button onclick="showImageCategory('natural')" id="btn-cat-natural" class="px-3 py-1.5 rounded-lg text-xs font-black bg-amber-500 text-white shadow-sm shrink-0">⛰️ A</button>
+                        <button onclick="showImageCategory('flower')" id="btn-cat-flower" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0">🌸 B</button>
+                        <button onclick="showImageCategory('festive')" id="btn-cat-festive" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0">🏮 C</button>
+                    </div>
+
+                    <!-- 1. 自然山水照片網格 -->
+                    <div id="grid-cat-natural" class="cat-grid grid grid-cols-5 gap-2">
+                        <!-- 由 JS 動態繪製與生成 10 張 -->
+                    </div>
+
+                    <!-- 2. 吉祥花卉照片網格 -->
+                    <div id="grid-cat-flower" class="cat-grid grid grid-cols-5 gap-2 hidden">
+                        <!-- 由 JS 動態繪製與生成 10 張 -->
+                    </div>
+
+                    <!-- 3. 節慶古典照片網格 -->
+                    <div id="grid-cat-festive" class="cat-grid grid grid-cols-5 gap-2 hidden">
+                        <!-- 由 JS 動態繪製與生成 10 張 -->
+                    </div>
+                </div>
+
+                <!-- 次分類 2：不風景 (星空與現代幾何、發光泡泡，具有隨機變換功能) -->
+                <div id="bg-sub-generative" class="bg-sub-content hidden flex flex-col gap-4">
+                    <div class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200">
+                        <span class="text-base font-black text-amber-900 block mb-1">🎲 程式即時變換底圖：</span>
+                        
+                        
+                        <div class="grid grid-cols-3 gap-2 mb-3">
+                            <button onclick="setGenerativeBackground('starry')" id="gen-starry" class="py-3 px-1 rounded-xl border-2 border-slate-300 font-bold text-sm bg-indigo-950 text-indigo-200">🌌 幻彩星空</button>
+                            <button onclick="setGenerativeBackground('geometric')" id="gen-geometric" class="py-3 px-1 rounded-xl border-2 border-slate-300 font-bold text-sm bg-teal-50 text-teal-800">📐 炫彩幾何</button>
+                            <button onclick="setGenerativeBackground('bubbles')" id="gen-bubbles" class="py-3 px-1 rounded-xl border-2 border-slate-300 font-bold text-sm bg-pink-50 text-pink-700">🫧 絢麗泡泡</button>
+                        </div>
+
+                        <!-- 隨機一鍵重新變換大按鈕 -->
+                        <button onclick="randomizeGenerative()" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black text-lg rounded-2xl shadow-md hover:from-purple-700 hover:to-indigo-700 transition active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-dice text-2xl animate-spin"></i> 🎲 點此「隨機變換」全新圖樣配置！
+                        </button>
+                    </div>
+
+                    <!-- 古典雅緻底紋 -->
+                    <div>
+                        <span class="text-sm font-black text-slate-700 block mb-2"><i class="fa-solid fa-border-all mr-1"></i> 吉祥古典底紋：</span>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setBackground('pattern', 'waves')" class="py-2 px-1 rounded-xl border-2 border-slate-200 bg-amber-50 font-bold text-amber-800 text-xs">🐟 萬福波紋</button>
+                            <button onclick="setBackground('pattern', 'clouds')" class="py-2 px-1 rounded-xl border-2 border-slate-200 bg-orange-50 font-bold text-amber-800 text-xs">☁️ 吉祥祥雲</button>
+                            <button onclick="setBackground('pattern', 'dots')" class="py-2 px-1 rounded-xl border-2 border-slate-200 bg-slate-50 font-bold text-slate-700 text-xs">典雅圓點</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 次分類 3：自訂色彩/雙色漸層 -->
+                <div id="bg-sub-color" class="bg-sub-content hidden flex flex-col gap-4">
+                    <!-- B. 自訂單色 -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <span class="text-base font-bold text-amber-800 block mb-2"><i class="fa-solid fa-paint-roller mr-1"></i> 自訂單色底圖：</span>
+                        <div class="flex items-center gap-4">
+                            <div class="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-300 shadow-md">
+                                <input type="color" id="customColorInput" value="#C82333" oninput="applyCustomColor(this.value)" class="absolute inset-0 w-full h-full cursor-pointer opacity-100 scale-150">
+                            </div>
+                            <div class="flex-1">
+                                <span class="font-bold text-slate-700 text-sm block">點選左側方塊挑選顏色</span>
+                                <div class="flex flex-wrap gap-1.5 mt-2">
+                                    <button onclick="applyCustomColor('#C82333')" class="w-7 h-7 rounded-md bg-[#C82333] border border-slate-300"></button>
+                                    <button onclick="applyCustomColor('#D4AF37')" class="w-7 h-7 rounded-md bg-[#D4AF37] border border-slate-300"></button>
+                                    <button onclick="applyCustomColor('#2E8B57')" class="w-7 h-7 rounded-md bg-[#2E8B57] border border-slate-300"></button>
+                                    <button onclick="applyCustomColor('#FF9999')" class="w-7 h-7 rounded-md bg-[#FF9999] border border-slate-300"></button>
+                                    <button onclick="applyCustomColor('#1E3D59')" class="w-7 h-7 rounded-md bg-[#1E3D59] border border-slate-300"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- C. 自訂漸層色 -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <span class="text-base font-bold text-amber-800 block mb-2"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 自訂雙色漸層：</span>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center justify-between gap-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-500">起點顏色:</span>
+                                    <input type="color" id="gradColor1" value="#ff7e5f" oninput="applyCustomGradient()" class="w-10 h-10 rounded-lg cursor-pointer border border-slate-300">
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-500">終點顏色:</span>
+                                    <input type="color" id="gradColor2" value="#feb47b" oninput="applyCustomGradient()" class="w-10 h-10 rounded-lg cursor-pointer border border-slate-300">
+                                </div>
+                                <div class="flex-1 flex flex-col">
+                                    <span class="text-xs font-bold text-slate-500">漸層方向: <span id="gradAngleVal">135°</span></span>
+                                    <input type="range" id="gradAngle" min="0" max="360" value="135" oninput="applyCustomGradient()" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 mt-1">
+                                <button onclick="applyPresetGradient('#ff7e5f', '#feb47b', 135)" class="py-1.5 px-2 rounded-xl text-xs font-bold text-white shadow-sm" style="background: linear-gradient(135deg, #ff7e5f, #feb47b);">暖陽金橙</button>
+                                <button onclick="applyPresetGradient('#96deda', '#50c9c3', 135)" class="py-1.5 px-2 rounded-xl text-xs font-bold text-slate-700 shadow-sm" style="background: linear-gradient(135deg, #96deda, #50c9c3);">靜心荷塘</button>
+                                <button onclick="applyPresetGradient('#f12711', '#f5af19', 135)" class="py-1.5 px-2 rounded-xl text-xs font-bold text-white shadow-sm" style="background: linear-gradient(135deg, #f12711, #f5af19);">迎春賀喜</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= STREAMING_CHUNK: 加字與加圖分頁 ================= -->
+            <div id="content-sticker" class="tab-content hidden flex flex-col gap-6">
+                <!-- 自行上傳照片區 -->
+                <div class="bg-amber-50 p-4 rounded-2xl border-2 border-dashed border-amber-300 text-center">
+                    <h4 class="text-lg font-bold text-amber-900 mb-1">📸 上傳您的去背圖/生活照</h4>
+                    <p class="text-xs text-amber-700 mb-3">點擊下方大按鈕即可重複上傳照片與點綴小物！</p>
+                    
+                    <label class="cursor-pointer bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-black text-lg py-3.5 px-6 rounded-2xl inline-flex items-center gap-2 shadow-md transition-all">
+                        <i class="fa-solid fa-cloud-arrow-up text-xl animate-bounce"></i> 選擇手機或電腦照片
+                        <input type="file" id="imageUpload" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)">
+                    </label>
+                </div>
+
+                <!-- 頂級客製化字體設計區 -->
+                <div class="bg-amber-50/50 p-4 rounded-2xl border-2 border-amber-200 flex flex-col gap-4">
+                    <span class="text-lg font-black text-amber-900 block border-b-2 border-amber-200 pb-1">✍️ 文字</span>
+                    
+                    <!-- 1. 輸入內容 -->
+                    <div>
+                        <span class="text-sm font-bold text-slate-600 block mb-1">輸入文字：</span>
+                        <input type="text" id="customTextInput" value="早安" placeholder="在此輸入文字..." class="w-full px-4 py-3 border-2 border-amber-300 rounded-xl font-bold text-lg focus:outline-none focus:border-amber-500">
+                    </div>
+
+                    <!-- 2. 字體顏色設定 -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <span class="text-sm font-bold text-slate-600 block mb-1">文字主要顏色：</span>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="textColor" value="#FFD700" class="w-10 h-10 rounded cursor-pointer border border-slate-300">
+                                <span class="text-xs font-bold text-slate-500">主體色</span>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-500 block">大小：</span>
+                            <input type="range" id="textSizeRange" min="30" max="150" value="80" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                        </div>
+                    </div>
+
+                    <!-- 3. 多層外框設定 (第一層描邊/內框) -->
+                    <div class="bg-white p-3 rounded-xl border border-amber-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="stroke1Enable" checked class="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500">
+                                <span class="text-sm font-bold text-slate-700">啟用第一層外框 (內層)</span>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-slate-400">顏色:</span>
+                                <input type="color" id="stroke1Color" value="#C82333" class="w-8 h-8 rounded cursor-pointer border border-slate-300">
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold text-slate-400">粗細: <span id="stroke1WidthVal">10</span></span>
+                                <input type="range" id="stroke1Width" min="2" max="30" value="10" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. 多層外框設定 (第二層描邊/最外圈) -->
+                    <div class="bg-white p-3 rounded-xl border border-amber-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="stroke2Enable" checked class="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500">
+                                <span class="text-sm font-bold text-slate-700">啟用第二層外框 (最外圈)</span>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-slate-400">顏色:</span>
+                                <input type="color" id="stroke2Color" value="#000000" class="w-8 h-8 rounded cursor-pointer border border-slate-300">
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold text-slate-400">粗細: <span id="stroke2WidthVal">8</span></span>
+                                <input type="range" id="stroke2Width" min="2" max="30" value="8" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 儲存 / 套用 / 新增 按鈕 -->
+                    <div class="flex gap-2">
+                        <button onclick="addCustomText()" class="flex-1 bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 active:scale-95 text-white font-black text-xl py-3 rounded-xl shadow-md transition-all">
+                            ➕ 新增到畫面上
+                        </button>
+                        <button onclick="updateSelectedText()" id="updateTextBtn" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl shadow-md active:scale-95 text-sm hidden">
+                            💾 更新選中文字
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 預設長輩最愛經典詞彙貼圖 -->
+                <div>
+                    <span class="text-base font-bold text-amber-800 block mb-2"><i class="fa-solid fa-circle-check mr-1"></i> 快速金字貼圖一鍵加入：</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <button onclick="addFastText('早安', '#FFD700', '#C82333')" class="py-2.5 px-1 bg-gradient-to-br from-amber-800 to-amber-950 text-yellow-300 rounded-xl border-2 border-yellow-400 font-black text-base shadow active:scale-95">☀️ 早安</button>
+                        <button onclick="addFastText('平安喜樂', '#FFD700', '#C82333')" class="py-2.5 px-1 bg-gradient-to-br from-amber-800 to-amber-950 text-yellow-300 rounded-xl border-2 border-yellow-400 font-black text-base shadow active:scale-95">🙏 平安喜樂</button>
+                        <button onclick="addFastText('吉祥如意', '#FFD700', '#C82333')" class="py-2.5 px-1 bg-gradient-to-br from-amber-800 to-amber-950 text-yellow-300 rounded-xl border-2 border-yellow-400 font-black text-base shadow active:scale-95">🧧 吉祥如意</button>
+                        <button onclick="addFastText('身體健康', '#FFD700', '#C82333')" class="py-2.5 px-1 bg-gradient-to-br from-amber-800 to-amber-950 text-yellow-300 rounded-xl border-2 border-yellow-400 font-black text-base shadow active:scale-95">💪 身體健康</button>
+                    </div>
+                </div>
+
+                <!-- 更多裝飾小物 -->
+                <div>
+                    <span class="text-base font-bold text-amber-800 block mb-2">🌸 點擊加入富貴吉祥裝飾貼圖：</span>
+                    <div class="grid grid-cols-6 gap-2">
+                        <button onclick="addEmojiSticker('🌸')" class="w-12 h-12 bg-rose-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-rose-200 active:scale-95">🌸</button>
+                        <button onclick="addEmojiSticker('🌹')" class="w-12 h-12 bg-rose-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-rose-200 active:scale-95">🌹</button>
+                        <button onclick="addEmojiSticker('☕')" class="w-12 h-12 bg-amber-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-amber-200 active:scale-95">☕</button>
+                        <button onclick="addEmojiSticker('🍎')" class="w-12 h-12 bg-rose-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-rose-200 active:scale-95">🍎</button>
+                        <button onclick="addEmojiSticker('🍊')" class="w-12 h-12 bg-orange-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-orange-200 active:scale-95">🍊</button>
+                        <button onclick="addEmojiSticker('🍍')" class="w-12 h-12 bg-yellow-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-yellow-200 active:scale-95">🍍</button>
+                        <button onclick="addEmojiSticker('🧧')" class="w-12 h-12 bg-red-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-red-200 active:scale-95">🧧</button>
+                        <button onclick="addEmojiSticker('🏮')" class="w-12 h-12 bg-red-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-red-200 active:scale-95">🏮</button>
+                        <button onclick="addEmojiSticker('✨')" class="w-12 h-12 bg-yellow-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-yellow-200 active:scale-95">✨</button>
+                        <button onclick="addEmojiSticker('🍀')" class="w-12 h-12 bg-emerald-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-emerald-200 active:scale-95">🍀</button>
+                        <button onclick="addEmojiSticker('🍵')" class="w-12 h-12 bg-green-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-green-200 active:scale-95">🍵</button>
+                        <button onclick="addEmojiSticker('🌅')" class="w-12 h-12 bg-sky-50 rounded-xl text-2xl shadow-sm flex items-center justify-center border border-sky-200 active:scale-95">🌅</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= STREAMING_CHUNK: 微調與調整大小分頁 ================= -->
+            <div id="content-adjust" class="tab-content hidden flex flex-col gap-5">
+                <div>
+                    <h3 class="text-xl font-black text-slate-800 mb-1">🎮 微調與調整面板</h3>
+                    <p class="text-sm text-slate-500">
+                        📱 您可以直接在左側圖片上用手指拖拉、或是拉動<strong>「外圍的彩色小圓球」</strong>來直接放大或旋轉喔！
+                    </p>
+                </div>
+
+                <!-- 選擇對象顯示 -->
+                <div class="bg-slate-100 px-4 py-3 rounded-2xl flex items-center justify-between border border-slate-200">
+                    <span class="font-bold text-slate-600 text-sm">正在調整的物件：</span>
+                    <span id="selectedLayerName" class="font-black text-amber-600 text-base">無 (請先點擊畫面上物件選取)</span>
+                </div>
+
+                <!-- 微調主控台 -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <span class="text-sm font-bold text-slate-600 block mb-2 text-center"><i class="fa-solid fa-arrows-up-down-left-right mr-1"></i> 手部顫抖或細微精準調整按鈕：</span>
+                    <div class="grid grid-cols-3 gap-3 max-w-[320px] mx-auto w-full">
+                        <button onclick="adjustSelected('rotate', -15)" class="h-16 bg-white border-2 border-amber-200 rounded-2xl shadow-sm active:scale-95 flex flex-col items-center justify-center text-amber-700 font-bold">
+                            <i class="fa-solid fa-rotate-left text-xl"></i>
+                            <span class="text-xs mt-1">左旋轉</span>
+                        </button>
+                        <button onclick="adjustSelected('move', {x:0, y:-15})" class="h-16 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl shadow-md active:scale-95 flex items-center justify-center">
+                            <i class="fa-solid fa-arrow-up text-2xl"></i>
+                        </button>
+                        <button onclick="adjustSelected('rotate', 15)" class="h-16 bg-white border-2 border-amber-200 rounded-2xl shadow-sm active:scale-95 flex flex-col items-center justify-center text-amber-700 font-bold">
+                            <i class="fa-solid fa-rotate-right text-xl"></i>
+                            <span class="text-xs mt-1">右旋轉</span>
+                        </button>
+
+                        <button onclick="adjustSelected('move', {x:-15, y:0})" class="h-16 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl shadow-md active:scale-95 flex items-center justify-center">
+                            <i class="fa-solid fa-arrow-left text-2xl"></i>
+                        </button>
+                        <div class="h-16 bg-slate-200 rounded-2xl flex items-center justify-center font-black text-slate-500 text-sm">
+                            移動
+                        </div>
+                        <button onclick="adjustSelected('move', {x:15, y:0})" class="h-16 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl shadow-md active:scale-95 flex items-center justify-center">
+                            <i class="fa-solid fa-arrow-right text-2xl"></i>
+                        </button>
+
+                        <button onclick="adjustSelected('scale', 0.9)" class="h-16 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-2xl shadow-sm active:scale-95 flex flex-col items-center justify-center text-amber-800 font-bold">
+                            <i class="fa-solid fa-magnifying-glass-minus text-xl"></i>
+                            <span class="text-xs mt-1">變小</span>
+                        </button>
+                        <button onclick="adjustSelected('move', {x:0, y:15})" class="h-16 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl shadow-md active:scale-95 flex items-center justify-center">
+                            <i class="fa-solid fa-arrow-down text-2xl"></i>
+                        </button>
+                        <button onclick="adjustSelected('scale', 1.1)" class="h-16 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-2xl shadow-sm active:scale-95 flex flex-col items-center justify-center text-amber-800 font-bold">
+                            <i class="fa-solid fa-magnifying-glass-plus text-xl"></i>
+                            <span class="text-xs mt-1">變大</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 翻轉與置中功能 -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex gap-2 justify-center">
+                        <button onclick="adjustSelected('flipX')" class="flex-1 py-3 bg-white border-2 border-slate-200 rounded-xl shadow-sm active:scale-95 font-bold text-slate-700 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-arrows-left-right text-amber-600"></i> 左右翻轉
+                        </button>
+                        <button onclick="adjustSelected('flipY')" class="flex-1 py-3 bg-white border-2 border-slate-200 rounded-xl shadow-sm active:scale-95 font-bold text-slate-700 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-arrows-up-down text-amber-600"></i> 上下翻轉
+                        </button>
+                    </div>
+                    <button onclick="adjustSelected('center')" class="py-3 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-xl shadow-sm active:scale-95 font-bold text-amber-900 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-crosshairs"></i> 將選定物件移到畫布正中央
+                    </button>
+                </div>
+            </div>
+
+            <!-- ================= STREAMING_CHUNK: 圖層管理分頁 ================= -->
+            <div id="content-layers" class="tab-content hidden flex flex-col gap-4">
+                <div>
+                    <h3 class="text-xl font-black text-slate-800 mb-1">🗂️ 圖層與前後順序</h3>
+                    <p class="text-sm text-slate-500">當有許多張照片重疊時，可以在這裡調整哪張在上面、哪張在下面喔！</p>
+                </div>
+
+                <!-- 圖層列表容器 -->
+                <div id="layersList" class="flex flex-col gap-3 max-h-[250px] overflow-y-auto pr-1">
+                    <!-- 動態生成圖層項目 -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部特色介紹與下載區 -->
+    <footer class="bg-amber-100 border-t-4 border-amber-300 py-6 px-4 text-center">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            
+            
+            </div>
+
+            <!-- 超大、超顯眼、超級容易點擊的下載按鈕 -->
+            <div class="w-full flex flex-col items-center justify-center">
+                <button onclick="downloadCard()" class="w-full md:w-auto bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-2xl md:text-3xl px-12 py-6 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center gap-3 active:scale-95 border-b-8 border-green-800">
+                    <i class="fa-solid fa-circle-down text-3xl md:text-4xl animate-bounce"></i> 儲存/下載我的美圖
+                </button>
+               
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ================= STREAMING_CHUNK: 核心狀態與 30 張底圖清單宣告 =================
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 【新增安全工具】自動將任何 Unsplash 圖片網址格式化為指定寬度，免去手動修改網址參數的困擾
+        function formatUnsplashUrl(url, width) {
+            if (url && url.includes('images.unsplash.com')) {
+                const baseUrl = url.split('?')[0];
+                return `${baseUrl}?auto=format&fit=crop&w=${width}&q=80`;
+            }
+            return url;
+        }
+        
+        let bgType = 'color'; // 'color', 'gradient', 'pattern', 'image', 'generative'
+        let bgValue = '#C82333'; // 預設喜慶紅
+        let bgImgElement = null; // 背景圖物件
+        let bgImgName = ''; // 紀錄背景圖名稱
+        
+        // 星空與幾何隨機變換用狀態
+        let genStyle = 'starry'; // 'starry', 'geometric', 'bubbles'
+        let genSeed = Math.random(); // 種子碼
+        
+        let layers = []; // 物件圖層陣列
+        let selectedId = null; // 目前選取的圖層 ID
+        
+        let history = []; // 用於「上一步」功能
+        
+        // 互動狀態變數
+        let activeInteraction = null; // 'drag', 'scale', 'rotate', null
+        let dragTarget = null;
+        let startX = 0;
+        let startY = 0;
+        let dragStartRot = 0;
+        let dragStartScaleX = 1;
+        let dragStartScaleY = 1;
+        let dragStartAngle = 0;
+        let dragStartDist = 1;
+
+        // 30張高畫質背景圖數據庫 (三個分類，每類10張，完全修正重複與無法載入之問題)
+        const imageDatabase = {
+            natural: [
+                { title: 'A01', url: 'https://images.unsplash.com/photo-1772424131868-6b9f154b59ce?auto=format&fit=crop&w=800&q=80' },
+                { title: 'A02', url: 'https://images.unsplash.com/photo-1667230149533-00c1428e682e?auto=format&fit=crop&w=800&q=80' },
+                { title: 'A03', url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80' },
+                { title: 'A04', url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80' },
+                { title: 'A05', url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=80' },
+                { title: 'A06', url: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?auto=format&fit=crop&w=800&q=80' },
+                { title: 'A07', url: 'https://images.unsplash.com/photo-1475113548554-5a36f1f523d6?auto=format&fit=crop&w=800&q=80' },
+                { title: 'A08', url: 'https://plus.unsplash.com/premium_photo-1736509616929-a1ed85596b49?auto=format&fit=crop&w=800&q=80' },
+                { title: 'A09', url: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80' },
+                { title: 'A10', url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80' }
+            ],
+            flower: [
+                { title: 'B01', url: 'https://plus.unsplash.com/premium_photo-1745177058177-9e6d171c9941?auto=format&fit=crop&w=800&q=80' },
+                { title: 'B02', url: 'https://plus.unsplash.com/premium_photo-1661337018701-1ab4caf665a2?auto=format&fit=crop&w=800&q=80' },
+                { title: 'B03', url: 'https://images.unsplash.com/photo-1560717789-0ac7c58ac90a?auto=format&fit=crop&w=800&q=80' },
+                { title: 'B04', url: 'https://images.unsplash.com/photo-1522748906645-95d8adfd52c7?auto=format&fit=crop&w=800&q=80' },
+                { title: 'B05', url: 'https://images.unsplash.com/photo-1775714942394-510cfc586685?auto=format&fit=crop&w=800&q=80' },
+                { title: 'B06', url: 'https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?auto=format&fit=crop&w=800&q=80' },
+                { title: 'B07', url: 'https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=800&q=80' },
+                { title: 'B08', url: 'https://plus.unsplash.com/premium_photo-1677601934602-77372da53f92?auto=format&fit=crop&w=800&q=80' },
+                { title: 'B09', url: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=800&q=80' },
+                { title: 'B10', url: 'https://plus.unsplash.com/premium_photo-1676376284814-ba7c90bd365b?auto=format&fit=crop&w=800&q=80' }
+            ],
+            festive: [
+                { title: 'C01', url: 'https://images.unsplash.com/photo-1777280465414-12b672db5451?auto=format&fit=crop&w=800&q=80' },
+                { title: 'C02', url: 'https://images.unsplash.com/photo-1776754373072-b06d560d335b?auto=format&fit=crop&w=800&q=80' },
+                { title: 'C03', url: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80' },
+                { title: 'C04', url: 'https://images.unsplash.com/photo-1688890239467-c43da335fe7e?auto=format&fit=crop&w=800&q=80' },
+                { title: 'C05', url: 'https://images.unsplash.com/photo-1774195348123-23811cf97f4d?auto=format&fit=crop&w=800&q=80' },
+                { title: 'C06', url: 'https://plus.unsplash.com/premium_photo-1778339919734-c7aa71d5e709?auto=format&fit=crop&w=800&q=80' },
+                { title: 'C07', url: 'https://plus.unsplash.com/premium_photo-1703801758165-bd105bc1a627?auto=format&fit=crop&w=800&q=80' },
+                { title: 'C08', url: 'https://images.unsplash.com/photo-1777892665041-e20c06769f95?auto=format&fit=crop&w=800&q=80' },
+                { title: 'C09', url: 'https://plus.unsplash.com/premium_photo-1667423049497-291580083466?auto=format&fit=crop&w=800&q=80' },
+                { title: 'C10', url: 'https://images.unsplash.com/photo-1533460004989-cef01064af7e?auto=format&fit=crop&w=800&q=80' }
+            ]
+        };
+
+        // 滑桿與色彩監聽事件 (顯示最新數值，並保證長輩操作後即時更新)
+        document.getElementById('stroke1Width').addEventListener('input', function(e) {
+            document.getElementById('stroke1WidthVal').innerText = e.target.value;
+            triggerImmediateTextUpdate();
+        });
+        document.getElementById('stroke2Width').addEventListener('input', function(e) {
+            document.getElementById('stroke2WidthVal').innerText = e.target.value;
+            triggerImmediateTextUpdate();
+        });
+        document.getElementById('textSizeRange').addEventListener('input', triggerImmediateTextUpdate);
+        document.getElementById('textColor').addEventListener('input', triggerImmediateTextUpdate);
+        document.getElementById('stroke1Color').addEventListener('input', triggerImmediateTextUpdate);
+        document.getElementById('stroke2Color').addEventListener('input', triggerImmediateTextUpdate);
+        document.getElementById('stroke1Enable').addEventListener('change', triggerImmediateTextUpdate);
+        document.getElementById('stroke2Enable').addEventListener('change', triggerImmediateTextUpdate);
+
+        // ================= STREAMING_CHUNK: 初始化與動態渲染背景列表 =================
+        window.onload = function() {
+            // 生成 30 張背景圖片按鈕
+            renderImageCategoryButtons();
+            // 預設為喜慶紅背景
+            setBackground('color', '#C82333');
+            saveState();
+        };
+
+        // 將 30 張底圖載入到對應的 Tab 中 (修復多參數網址加載失敗與 fallback 安全機制)
+        function renderImageCategoryButtons() {
+            Object.keys(imageDatabase).forEach(category => {
+                const grid = document.getElementById(`grid-cat-${category}`);
+                let html = '';
+                imageDatabase[category].forEach(img => {
+                    // 自動轉為 150 寬度的極速縮圖
+                    const thumbUrl = formatUnsplashUrl(img.url, 150);
+                    // 套用時自動轉為 1200 寬度的高清大圖
+                    const bigUrl = formatUnsplashUrl(img.url, 1200);
+                    html += `
+                        <button onclick="setBackground('image', '${bigUrl}', '${img.title}')" class="relative rounded-xl overflow-hidden aspect-square border-4 border-transparent focus:border-amber-500 shadow-sm transition active:scale-95 group">
+                            <img src="${thumbUrl}" alt="${img.title}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://placehold.co/150x150/f59e0b/ffffff?text=${encodeURIComponent(img.title)}'">
+                            <span class="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] py-0.5 font-bold truncate text-center">${img.title}</span>
+                        </button>
+                    `;
+                });
+                grid.innerHTML = html;
+            });
+        }
+
+        // 切換底圖三大子分類 (A/B/C)
+        function showImageCategory(category) {
+            document.querySelectorAll('.cat-grid').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`grid-cat-${category}`).classList.remove('hidden');
+
+            document.getElementById('btn-cat-natural').className = 'px-3 py-1.5 rounded-lg text-xs font-black bg-slate-200 text-slate-700 shrink-0';
+            document.getElementById('btn-cat-flower').className = 'px-3 py-1.5 rounded-lg text-xs font-black bg-slate-200 text-slate-700 shrink-0';
+            document.getElementById('btn-cat-festive').className = 'px-3 py-1.5 rounded-lg text-xs font-black bg-slate-200 text-slate-700 shrink-0';
+
+            const activeBtn = document.getElementById(`btn-cat-${category}`);
+            activeBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-black bg-amber-500 text-white shadow-sm shrink-0';
+        }
+
+        // ================= STREAMING_CHUNK: 背景設定與 Canvas 即時渲染核心 =================
+        function setBackground(type, value, name = '') {
+            bgType = type;
+            bgValue = value;
+            bgImgName = name;
+            document.getElementById('emptyHint').classList.add('hidden');
+
+            if (type === 'image') {
+                bgImgElement = new Image();
+                bgImgElement.crossOrigin = 'anonymous'; // 避開跨網域
+                bgImgElement.onload = function() {
+                    draw();
+                    saveState();
+                };
+                bgImgElement.onerror = function() {
+                    bgType = 'gradient';
+                    bgValue = { color1: '#ff7e5f', color2: '#feb47b', angle: 135 };
+                    draw();
+                };
+                bgImgElement.src = value;
+            } else {
+                bgImgElement = null;
+                draw();
+                saveState();
+            }
+        }
+
+        function applyCustomColor(val) {
+            document.getElementById('customColorInput').value = val;
+            setBackground('color', val);
+        }
+
+        function applyCustomGradient() {
+            const color1 = document.getElementById('gradColor1').value;
+            const color2 = document.getElementById('gradColor2').value;
+            const angle = parseInt(document.getElementById('gradAngle').value);
+            document.getElementById('gradAngleVal').innerText = angle + '°';
+            setBackground('gradient', { color1, color2, angle });
+        }
+
+        function applyPresetGradient(c1, c2, angle) {
+            document.getElementById('gradColor1').value = c1;
+            document.getElementById('gradColor2').value = c2;
+            document.getElementById('gradAngle').value = angle;
+            document.getElementById('gradAngleVal').innerText = angle + '°';
+            setBackground('gradient', { color1: c1, color2: c2, angle });
+        }
+
+        // 設定星空、幾何、泡泡變換
+        function setGenerativeBackground(style) {
+            bgType = 'generative';
+            genStyle = style;
+            
+            // 重置樣式按鈕的高亮狀態
+            document.getElementById('gen-starry').className = "py-3 px-1 rounded-xl border-2 font-bold text-sm bg-indigo-950 text-indigo-200 border-indigo-500";
+            document.getElementById('gen-geometric').className = "py-3 px-1 rounded-xl border-2 font-bold text-sm bg-teal-50 text-teal-800 border-slate-300";
+            document.getElementById('gen-bubbles').className = "py-3 px-1 rounded-xl border-2 font-bold text-sm bg-pink-50 text-pink-700 border-slate-300";
+
+            if (style === 'starry') {
+                document.getElementById('gen-starry').className = "py-3 px-1 rounded-xl border-2 font-bold text-sm bg-indigo-950 text-white border-purple-500 shadow";
+            } else if (style === 'geometric') {
+                document.getElementById('gen-geometric').className = "py-3 px-1 rounded-xl border-2 font-bold text-sm bg-teal-500 text-white border-teal-600 shadow";
+            } else if (style === 'bubbles') {
+                document.getElementById('gen-bubbles').className = "py-3 px-1 rounded-xl border-2 font-bold text-sm bg-pink-500 text-white border-pink-600 shadow";
+            }
+
+            draw();
+            saveState();
+        }
+
+        // 重新獲得隨機變換背景
+        function randomizeGenerative() {
+            genSeed = Math.random();
+            draw();
+            saveState();
+        }
+
+        // ================= STREAMING_CHUNK: 繪製隨機生成之特殊背景 (星空/幾何/泡泡) =================
+        function drawGenerativeBackground(ctx, style, seed) {
+            // 利用固定種子碼模擬一個簡單隨機數，確保每次重新繪圖時形狀維持一致
+            let randomCount = 0;
+            function pseudoRandom() {
+                const x = Math.sin(seed + randomCount++) * 10000;
+                return x - Math.floor(x);
+            }
+
+            if (style === 'starry') {
+                // 1. 夜空深藍紫色漸層
+                const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                grad.addColorStop(0, '#0a0b1e');
+                grad.addColorStop(0.5, '#16133a');
+                grad.addColorStop(1, '#2c163f');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // 2. 朦朧的星雲光暈 (RadialGradient)
+                for (let i = 0; i < 3; i++) {
+                    const cx = pseudoRandom() * canvas.width;
+                    const cy = pseudoRandom() * canvas.height;
+                    const r = pseudoRandom() * 250 + 150;
+                    const color = i % 2 === 0 ? 'rgba(168, 85, 247, 0.25)' : 'rgba(59, 130, 246, 0.25)';
+                    
+                    const nebGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+                    nebGrad.addColorStop(0, color);
+                    nebGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = nebGrad;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+
+                // 3. 繁星點點
+                ctx.fillStyle = '#ffffff';
+                for (let i = 0; i < 100; i++) {
+                    const x = pseudoRandom() * canvas.width;
+                    const y = pseudoRandom() * canvas.height;
+                    const radius = pseudoRandom() * 2 + 0.5;
+                    const alpha = pseudoRandom();
+
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // 4. 吉祥流星
+                ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < 3; i++) {
+                    const x = pseudoRandom() * (canvas.width - 200);
+                    const y = pseudoRandom() * (canvas.height - 200);
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + 100, y + 100);
+                    ctx.stroke();
+                }
+            } 
+            else if (style === 'geometric') {
+                // 現代莫蘭迪幾何配色
+                ctx.fillStyle = '#f3f4f6'; // 明亮灰白底
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const palette = ['#e11d48', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
+
+                for (let i = 0; i < 20; i++) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.15 + pseudoRandom() * 0.25;
+                    ctx.fillStyle = palette[Math.floor(pseudoRandom() * palette.length)];
+
+                    const shapeType = Math.floor(pseudoRandom() * 3);
+                    const x = pseudoRandom() * canvas.width;
+                    const y = pseudoRandom() * canvas.height;
+                    const size = pseudoRandom() * 200 + 80;
+
+                    ctx.translate(x, y);
+                    ctx.rotate(pseudoRandom() * Math.PI * 2);
+
+                    if (shapeType === 0) {
+                        // 圓形
+                        ctx.beginPath();
+                        ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (shapeType === 1) {
+                        // 方塊
+                        ctx.fillRect(-size / 2, -size / 2, size, size);
+                    } else {
+                        // 三角形
+                        ctx.beginPath();
+                        ctx.moveTo(0, -size / 2);
+                        ctx.lineTo(size / 2, size / 2);
+                        ctx.lineTo(-size / 2, size / 2);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+            }
+            else if (style === 'bubbles') {
+                // 3. 夢幻漸層發光泡泡
+                const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, '#fbcfe8'); // 櫻粉色
+                grad.addColorStop(0.5, '#fed7aa'); // 橙黃色
+                grad.addColorStop(1, '#c084fc'); // 淺紫色
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                for (let i = 0; i < 25; i++) {
+                    const cx = pseudoRandom() * canvas.width;
+                    const cy = pseudoRandom() * canvas.height;
+                    const r = pseudoRandom() * 90 + 30;
+
+                    ctx.save();
+                    ctx.globalAlpha = 0.3;
+                    
+                    // 泡泡內部漸層
+                    const bubGrad = ctx.createRadialGradient(cx - r/3, cy - r/3, 5, cx, cy, r);
+                    bubGrad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                    bubGrad.addColorStop(0.4, 'rgba(255, 192, 203, 0.4)');
+                    bubGrad.addColorStop(1, 'rgba(128, 90, 213, 0.15)');
+                    
+                    ctx.fillStyle = bubGrad;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 泡泡邊緣高光
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.restore();
+                }
+            }
+        }
+
+        // ================= STREAMING_CHUNK: 基礎背景繪製流程 =================
+        function drawBackground() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (bgType === 'color') {
+                ctx.fillStyle = bgValue;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } 
+            else if (bgType === 'gradient') {
+                const info = bgValue;
+                const angleRad = (info.angle * Math.PI) / 180;
+                const r = canvas.width / 2;
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                
+                const x0 = cx - r * Math.cos(angleRad);
+                const y0 = cy - r * Math.sin(angleRad);
+                const x1 = cx + r * Math.cos(angleRad);
+                const y1 = cy + r * Math.sin(angleRad);
+                
+                const gradient = ctx.createLinearGradient(x0, y0, x1, y1);
+                gradient.addColorStop(0, info.color1);
+                gradient.addColorStop(1, info.color2);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } 
+            else if (bgType === 'pattern') {
+                ctx.fillStyle = '#FAF9F6'; // 基礎古典米白底
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = '#E2D3B8';
+                ctx.lineWidth = 1.5;
+
+                if (bgValue === 'dots') {
+                    ctx.fillStyle = '#C8B99E';
+                    for (let x = 20; x < canvas.width; x += 40) {
+                        for (let y = 20; y < canvas.height; y += 40) {
+                            ctx.beginPath();
+                            ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                } 
+                else if (bgValue === 'waves') {
+                    // 古典青海波 (東方福壽綿延)
+                    ctx.strokeStyle = '#D4AF37'; 
+                    const r = 30; 
+                    const stepX = r * 2;
+                    const stepY = r / 2;
+                    
+                    for (let y = -r; y < canvas.height + r; y += stepY) {
+                        const isOdd = Math.floor(y / stepY) % 2 === 0;
+                        const offsetX = isOdd ? r : 0;
+                        for (let x = -r; x < canvas.width + r; x += stepX) {
+                            const curX = x + offsetX;
+                            for (let k = r; k > 5; k -= 6) {
+                                ctx.beginPath();
+                                ctx.arc(curX, y, k, Math.PI, 0);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+                else if (bgValue === 'clouds') {
+                    // 傳統吉祥祥雲
+                    ctx.fillStyle = 'rgba(212, 175, 55, 0.12)';
+                    ctx.strokeStyle = '#D4AF37';
+                    ctx.lineWidth = 1.2;
+                    
+                    const drawCloud = (x, y) => {
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.bezierCurveTo(x - 20, y - 20, x - 20, y - 40, x, y - 40);
+                        ctx.bezierCurveTo(x + 10, y - 60, x + 40, y - 60, x + 50, y - 40);
+                        ctx.bezierCurveTo(x + 80, y - 40, x + 80, y - 20, x + 60, y);
+                        ctx.bezierCurveTo(x + 40, y + 20, x + 10, y + 20, x, y);
+                        ctx.closePath();
+                        ctx.stroke();
+                        ctx.fill();
+                    };
+
+                    for (let x = 50; x < canvas.width; x += 200) {
+                        for (let y = 60; y < canvas.height; y += 150) {
+                            const offset = (Math.floor(y / 150) % 2) * 100;
+                            drawCloud(x + offset, y);
+                        }
+                    }
+                }
+            } 
+            else if (bgType === 'image' && bgImgElement) {
+                // 等比例填滿
+                const canvasRatio = canvas.width / canvas.height;
+                const imgRatio = bgImgElement.width / bgImgElement.height;
+                let drawWidth, drawHeight, x, y;
+
+                if (imgRatio > canvasRatio) {
+                    drawHeight = canvas.height;
+                    drawWidth = canvas.height * imgRatio;
+                    x = (canvas.width - drawWidth) / 2;
+                    y = 0;
+                } else {
+                    drawWidth = canvas.width;
+                    drawHeight = canvas.width / imgRatio;
+                    x = 0;
+                    y = (canvas.height - drawHeight) / 2;
+                }
+                ctx.drawImage(bgImgElement, x, y, drawWidth, drawHeight);
+            }
+            else if (bgType === 'generative') {
+                // 程式即時渲染之星空幾何
+                drawGenerativeBackground(ctx, genStyle, genSeed);
+            }
+        }
+
+        // ================= STREAMING_CHUNK: 新增字體與照片物件邏輯 =================
+        function createNewLayer(type, content) {
+            return {
+                id: Date.now() + Math.random(),
+                type: type, // 'image', 'text'
+                content: content,
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                scaleX: 1,
+                scaleY: 1,
+                rotation: 0,
+                width: 200,
+                height: 200,
+                color: '#FFD700',
+                
+                // 客製化描邊屬性 (預設啟用雙層外框)
+                stroke1Enabled: true,
+                stroke1Color: '#C82333',
+                stroke1Width: 10,
+                stroke2Enabled: true,
+                stroke2Color: '#000000',
+                stroke2Width: 8,
+                fontSize: 80,
+                name: type === 'text' ? `文字「${content}」` : '照片貼圖'
+            };
+        }
+
+        function handleImageUpload(event) {
+            const files = event.target.files;
+            if (!files) return;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const newLayer = createNewLayer('image', img);
+                        const maxDim = 320;
+                        if (img.width > img.height) {
+                            newLayer.width = maxDim;
+                            newLayer.height = maxDim * (img.height / img.width);
+                        } else {
+                            newLayer.height = maxDim;
+                            newLayer.width = maxDim * (img.width / img.height);
+                        }
+
+                        layers.push(newLayer);
+                        selectedId = newLayer.id;
+                        updateSelectionUI();
+                        draw();
+                        saveState();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+            event.target.value = '';
+        }
+
+        function addCustomText() {
+            const textVal = document.getElementById('customTextInput').value.trim();
+            if (!textVal) {
+                return;
+            }
+
+            const newLayer = createNewLayer('text', textVal);
+            newLayer.color = document.getElementById('textColor').value;
+            newLayer.fontSize = parseInt(document.getElementById('textSizeRange').value);
+            newLayer.stroke1Enabled = document.getElementById('stroke1Enable').checked;
+            newLayer.stroke1Color = document.getElementById('stroke1Color').value;
+            newLayer.stroke1Width = parseInt(document.getElementById('stroke1Width').value);
+            newLayer.stroke2Enabled = document.getElementById('stroke2Enable').checked;
+            newLayer.stroke2Color = document.getElementById('stroke2Color').value;
+            newLayer.stroke2Width = parseInt(document.getElementById('stroke2Width').value);
+
+            newLayer.width = textVal.length * newLayer.fontSize * 1.05;
+            newLayer.height = newLayer.fontSize * 1.2;
+
+            layers.push(newLayer);
+            selectedId = newLayer.id;
+            updateSelectionUI();
+            draw();
+            saveState();
+        }
+
+        function syncTextPanelToSelected(layer) {
+            if (layer.type !== 'text') {
+                document.getElementById('updateTextBtn').classList.add('hidden');
+                return;
+            }
+            
+            document.getElementById('updateTextBtn').classList.remove('hidden');
+            document.getElementById('customTextInput').value = layer.content;
+            document.getElementById('textColor').value = layer.color;
+            document.getElementById('textSizeRange').value = layer.fontSize;
+            
+            document.getElementById('stroke1Enable').checked = layer.stroke1Enabled;
+            document.getElementById('stroke1Color').value = layer.stroke1Color;
+            document.getElementById('stroke1Width').value = layer.stroke1Width;
+            document.getElementById('stroke1WidthVal').innerText = layer.stroke1Width;
+            
+            document.getElementById('stroke2Enable').checked = layer.stroke2Enabled;
+            document.getElementById('stroke2Color').value = layer.stroke2Color;
+            document.getElementById('stroke2Width').value = layer.stroke2Width;
+            document.getElementById('stroke2WidthVal').innerText = layer.stroke2Width;
+        }
+
+        function triggerImmediateTextUpdate() {
+            const activeLayer = layers.find(l => l.id === selectedId);
+            if (!activeLayer || activeLayer.type !== 'text') return;
+
+            activeLayer.content = document.getElementById('customTextInput').value;
+            activeLayer.color = document.getElementById('textColor').value;
+            activeLayer.fontSize = parseInt(document.getElementById('textSizeRange').value);
+            
+            activeLayer.stroke1Enabled = document.getElementById('stroke1Enable').checked;
+            activeLayer.stroke1Color = document.getElementById('stroke1Color').value;
+            activeLayer.stroke1Width = parseInt(document.getElementById('stroke1Width').value);
+            
+            activeLayer.stroke2Enabled = document.getElementById('stroke2Enable').checked;
+            activeLayer.stroke2Color = document.getElementById('stroke2Color').value;
+            activeLayer.stroke2Width = parseInt(document.getElementById('stroke2Width').value);
+
+            activeLayer.width = activeLayer.content.length * activeLayer.fontSize * 1.05;
+            activeLayer.height = activeLayer.fontSize * 1.2;
+            activeLayer.name = `文字「${activeLayer.content}」`;
+
+            draw();
+        }
+
+        function updateSelectedText() {
+            triggerImmediateTextUpdate();
+            saveState();
+        }
+
+        function addFastText(text, color, strokeColor) {
+            const newLayer = createNewLayer('text', text);
+            newLayer.color = color;
+            newLayer.stroke1Color = strokeColor;
+            newLayer.stroke1Width = 10;
+            newLayer.stroke2Enabled = true;
+            newLayer.stroke2Color = '#000000';
+            newLayer.stroke2Width = 8;
+            newLayer.fontSize = 80;
+            newLayer.width = text.length * 80 * 1.05;
+            newLayer.height = 96;
+
+            layers.push(newLayer);
+            selectedId = newLayer.id;
+            updateSelectionUI();
+            draw();
+            saveState();
+        }
+
+        function addEmojiSticker(emoji) {
+            const newLayer = createNewLayer('text', emoji);
+            newLayer.fontSize = 90;
+            newLayer.width = 110;
+            newLayer.height = 110;
+            newLayer.stroke1Enabled = false;
+            newLayer.stroke2Enabled = false;
+            newLayer.name = `貼圖 ${emoji}`;
+            
+            layers.push(newLayer);
+            selectedId = newLayer.id;
+            updateSelectionUI();
+            draw();
+            saveState();
+        }
+
+        // ================= STREAMING_CHUNK: 拖曳、雙球(藍綠)縮放與旋轉直覺算法 =================
+        function getGlobalCoords(layer, localX, localY) {
+            const rad = (layer.rotation * Math.PI) / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            
+            const sx = localX * layer.scaleX;
+            const sy = localY * layer.scaleY;
+            
+            const gx = layer.x + sx * cos - sy * sin;
+            const gy = layer.y + sx * sin + sy * cos;
+            return { x: gx, y: gy };
+        }
+
+        function hitTest(coords) {
+            if (selectedId === null) return { type: 'bg', target: null };
+            
+            const target = layers.find(l => l.id === selectedId);
+            if (!target) return { type: 'bg', target: null };
+
+            // 1. 頂部「綠色旋轉球」 (大球好按)
+            const rotateHandlePos = getGlobalCoords(target, 0, -target.height/2 - 45);
+            if (Math.hypot(coords.x - rotateHandlePos.x, coords.y - rotateHandlePos.y) < 25) {
+                return { type: 'rotate', target: target };
+            }
+
+            // 2. 右下角「藍色等比縮放球」
+            const scaleHandlePos = getGlobalCoords(target, target.width/2, target.height/2);
+            if (Math.hypot(coords.x - scaleHandlePos.x, coords.y - scaleHandlePos.y) < 25) {
+                return { type: 'scale', target: target };
+            }
+
+            // 3. 物件主體
+            const distToCenter = Math.hypot(coords.x - target.x, coords.y - target.y);
+            const maxRadius = Math.max(target.width * Math.abs(target.scaleX), target.height * Math.abs(target.scaleY)) / 2 + 15;
+            
+            if (distToCenter < maxRadius) {
+                return { type: 'drag', target: target };
+            }
+
+            // 4. 點擊其他圖層切換
+            for (let i = layers.length - 1; i >= 0; i--) {
+                const layer = layers[i];
+                const layerDist = Math.hypot(coords.x - layer.x, coords.y - layer.y);
+                const layerRadius = Math.max(layer.width * Math.abs(layer.scaleX), layer.height * Math.abs(layer.scaleY)) / 2;
+                if (layerDist < layerRadius) {
+                    return { type: 'switch', target: layer };
+                }
+            }
+
+            return { type: 'bg', target: null };
+        }
+
+        function getEventCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const x = ((clientX - rect.left) / rect.width) * canvas.width;
+            const y = ((clientY - rect.top) / rect.height) * canvas.height;
+            return { x, y };
+        }
+
+        function handleStart(e) {
+            const coords = getEventCanvasCoords(e);
+            const hit = hitTest(coords);
+
+            if (hit.type === 'rotate') {
+                activeInteraction = 'rotate';
+                dragTarget = hit.target;
+                dragStartAngle = Math.atan2(coords.y - dragTarget.y, coords.x - dragTarget.x) * 180 / Math.PI;
+                dragStartRot = dragTarget.rotation;
+                e.preventDefault();
+            }
+            else if (hit.type === 'scale') {
+                activeInteraction = 'scale';
+                dragTarget = hit.target;
+                dragStartDist = Math.hypot(coords.x - dragTarget.x, coords.y - dragTarget.y);
+                dragStartScaleX = dragTarget.scaleX;
+                dragStartScaleY = dragTarget.scaleY;
+                e.preventDefault();
+            }
+            else if (hit.type === 'drag') {
+                activeInteraction = 'drag';
+                dragTarget = hit.target;
+                startX = coords.x - dragTarget.x;
+                startY = coords.y - dragTarget.y;
+                e.preventDefault();
+            }
+            else if (hit.type === 'switch') {
+                selectedId = hit.target.id;
+                activeInteraction = 'drag';
+                dragTarget = hit.target;
+                startX = coords.x - dragTarget.x;
+                startY = coords.y - dragTarget.y;
+                syncTextPanelToSelected(dragTarget);
+                updateSelectionUI();
+                draw();
+                e.preventDefault();
+            }
+            else {
+                selectedId = null;
+                document.getElementById('updateTextBtn').classList.add('hidden');
+                updateSelectionUI();
+                draw();
+            }
+        }
+
+        function handleMove(e) {
+            if (!activeInteraction || !dragTarget) return;
+            e.preventDefault();
+            const coords = getEventCanvasCoords(e);
+
+            if (activeInteraction === 'drag') {
+                dragTarget.x = coords.x - startX;
+                dragTarget.y = coords.y - startY;
+            }
+            else if (activeInteraction === 'rotate') {
+                const currentAngle = Math.atan2(coords.y - dragTarget.y, coords.x - dragTarget.x) * 180 / Math.PI;
+                let diff = currentAngle - dragStartAngle;
+                dragTarget.rotation = (dragStartRot + diff) % 360;
+            }
+            else if (activeInteraction === 'scale') {
+                const currentDist = Math.hypot(coords.x - dragTarget.x, coords.y - dragTarget.y);
+                const ratio = currentDist / dragStartDist;
+                const newScaleX = dragStartScaleX * ratio;
+                const newScaleY = dragStartScaleY * ratio;
+                
+                if (Math.abs(newScaleX) > 0.1) dragTarget.scaleX = newScaleX;
+                if (Math.abs(newScaleY) > 0.1) dragTarget.scaleY = newScaleY;
+            }
+
+            draw();
+        }
+
+        function handleEnd() {
+            if (activeInteraction) {
+                activeInteraction = null;
+                dragTarget = null;
+                saveState();
+            }
+        }
+
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+
+        canvas.addEventListener('touchstart', handleStart, { passive: false });
+        canvas.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('touchend', handleEnd);
+
+        // ================= STREAMING_CHUNK: 繪製主畫布流程與全新立體文字 (完全不重影) =================
+        function draw() {
+            drawBackground();
+
+            layers.forEach(layer => {
+                ctx.save();
+                ctx.translate(layer.x, layer.y);
+                ctx.rotate((layer.rotation * Math.PI) / 180);
+                ctx.scale(layer.scaleX, layer.scaleY);
+
+                if (layer.type === 'image') {
+                    ctx.drawImage(
+                        layer.content, 
+                        -layer.width / 2, 
+                        -layer.height / 2, 
+                        layer.width, 
+                        layer.height
+                    );
+                } 
+                else if (layer.type === 'text') {
+                    // 全新極致銳利、無任何偏置(疊影)的雙重描邊
+                    ctx.font = `900 ${layer.fontSize}px "Noto Sans TC", system-ui, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.lineJoin = 'round';
+                    ctx.miterLimit = 2;
+
+                    // 1. 最下層：第二外框 (最寬)
+                    if (layer.stroke2Enabled) {
+                        ctx.strokeStyle = layer.stroke2Color;
+                        ctx.lineWidth = layer.stroke1Width + layer.stroke2Width;
+                        ctx.strokeText(layer.content, 0, 0);
+                    }
+
+                    // 2. 中間層：第一外框 (中等寬度)
+                    if (layer.stroke1Enabled) {
+                        ctx.strokeStyle = layer.stroke1Color;
+                        ctx.lineWidth = layer.stroke1Width;
+                        ctx.strokeText(layer.content, 0, 0);
+                    }
+
+                    // 3. 最上層：文字主體填充 (銳利呈現)
+                    ctx.fillStyle = layer.color;
+                    ctx.fillText(layer.content, 0, 0);
+                }
+
+                // 選取狀態之虛線框線與彩色操作大球
+                if (layer.id === selectedId) {
+                    ctx.strokeStyle = '#f97316'; // 醒目橘色框
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([8, 6]);
+                    ctx.strokeRect(-layer.width/2 - 10, -layer.height/2 - 10, layer.width + 20, layer.height + 20);
+                    ctx.setLineDash([]); // 還原實線
+
+                    const sw = layer.width/2;
+                    const sh = layer.height/2;
+
+                    // 繪製頂部旋轉連接線
+                    ctx.beginPath();
+                    ctx.moveTo(0, -sh - 10);
+                    ctx.lineTo(0, -sh - 45);
+                    ctx.strokeStyle = '#f97316';
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+
+                    // 頂部旋轉圓球 (綠色)
+                    ctx.beginPath();
+                    ctx.arc(0, -sh - 45, 14, 0, Math.PI * 2);
+                    ctx.fillStyle = '#22c55e';
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // 右下縮放圓球 (藍色)
+                    ctx.beginPath();
+                    ctx.arc(sw, sh, 14, 0, Math.PI * 2);
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            });
+
+            renderLayersUI();
+        }
+
+        // ================= STREAMING_CHUNK: 長輩微調面板與圖層運作 =================
+        function updateSelectionUI() {
+            const target = layers.find(l => l.id === selectedId);
+            const textEl = document.getElementById('selectedLayerName');
+            if (target) {
+                textEl.innerText = target.name;
+                textEl.className = "font-black text-emerald-600 text-base";
+                syncTextPanelToSelected(target);
+            } else {
+                textEl.innerText = "無 (請點選左邊圖片選取)";
+                textEl.className = "font-black text-amber-600 text-base";
+            }
+        }
+
+        function adjustSelected(action, value) {
+            const target = layers.find(l => l.id === selectedId);
+            if (!target) {
+                return;
+            }
+
+            if (action === 'move') {
+                target.x += value.x;
+                target.y += value.y;
+            } 
+            else if (action === 'scale') {
+                target.scaleX *= value;
+                target.scaleY *= value;
+                if (Math.abs(target.scaleX) < 0.1) target.scaleX = 0.1 * Math.sign(target.scaleX);
+                if (Math.abs(target.scaleY) < 0.1) target.scaleY = 0.1 * Math.sign(target.scaleY);
+            } 
+            else if (action === 'rotate') {
+                target.rotation = (target.rotation + value) % 360;
+            } 
+            else if (action === 'flipX') {
+                target.scaleX *= -1;
+            } 
+            else if (action === 'flipY') {
+                target.scaleY *= -1;
+            }
+            else if (action === 'center') {
+                target.x = canvas.width / 2;
+                target.y = canvas.height / 2;
+            }
+
+            draw();
+            saveState();
+        }
+
+        function renderLayersUI() {
+            const container = document.getElementById('layersList');
+            if (layers.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        目前畫面上還沒有照片或貼圖喔，趕快去第二分頁加一些吧！
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            for (let i = layers.length - 1; i >= 0; i--) {
+                const layer = layers[i];
+                const isSelected = layer.id === selectedId;
+                
+                html += `
+                    <div class="flex items-center justify-between p-3 rounded-2xl border-2 transition-all ${
+                        isSelected ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white hover:bg-slate-50'
+                    }">
+                        <button onclick="selectLayer(${layer.id})" class="flex items-center gap-3 text-left flex-1">
+                            <span class="text-lg">${layer.type === 'text' ? '✍️' : '📸'}</span>
+                            <span class="font-black text-slate-800 text-base line-clamp-1">${layer.name}</span>
+                        </button>
+
+                        <div class="flex items-center gap-1">
+                            <button onclick="moveLayerUp(${i})" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-amber-100 text-slate-700 flex items-center justify-center font-bold text-lg active:scale-95 shadow-sm" title="往上移一層">
+                                <i class="fa-solid fa-angle-up"></i>
+                            </button>
+                            <button onclick="moveLayerDown(${i})" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-amber-100 text-slate-700 flex items-center justify-center font-bold text-lg active:scale-95 shadow-sm" title="往下移一層">
+                                <i class="fa-solid fa-angle-down"></i>
+                            </button>
+                            <button onclick="deleteLayer(${layer.id})" class="w-10 h-10 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-lg active:scale-95 shadow-sm ml-1" title="刪除">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function selectLayer(id) {
+            selectedId = id;
+            updateSelectionUI();
+            draw();
+        }
+
+        function moveLayerUp(index) {
+            if (index < layers.length - 1) {
+                const temp = layers[index];
+                layers[index] = layers[index + 1];
+                layers[index + 1] = temp;
+                draw();
+                saveState();
+            }
+        }
+
+        function moveLayerDown(index) {
+            if (index > 0) {
+                const temp = layers[index];
+                layers[index] = layers[index - 1];
+                layers[index - 1] = temp;
+                draw();
+                saveState();
+            }
+        }
+
+        function deleteLayer(id) {
+            layers = layers.filter(l => l.id !== id);
+            if (selectedId === id) {
+                selectedId = layers.length > 0 ? layers[layers.length - 1].id : null;
+            }
+            updateSelectionUI();
+            draw();
+            saveState();
+        }
+
+        // ================= STREAMING_CHUNK: 歷史與儲存復原機制 =================
+        function saveState() {
+            const serialized = {
+                bgType: bgType,
+                bgValue: (bgType === 'gradient') ? {...bgValue} : (Array.isArray(bgValue) ? [...bgValue] : bgValue),
+                genStyle: genStyle,
+                genSeed: genSeed,
+                layers: layers.map(l => ({
+                    id: l.id,
+                    type: l.type,
+                    content: l.content,
+                    x: l.x,
+                    y: l.y,
+                    scaleX: l.scaleX,
+                    scaleY: l.scaleY,
+                    rotation: l.rotation,
+                    width: l.width,
+                    height: l.height,
+                    color: l.color,
+                    stroke1Enabled: l.stroke1Enabled,
+                    stroke1Color: l.stroke1Color,
+                    stroke1Width: l.stroke1Width,
+                    stroke2Enabled: l.stroke2Enabled,
+                    stroke2Color: l.stroke2Color,
+                    stroke2Width: l.stroke2Width,
+                    fontSize: l.fontSize,
+                    name: l.name
+                })),
+                selectedId: selectedId
+            };
+            
+            history.push(JSON.stringify(serialized));
+            if (history.length > 20) {
+                history.shift();
+            }
+        }
+
+        function undo() {
+            if (history.length <= 1) {
+                return;
+            }
+            history.pop();
+            const stateStr = history[history.length - 1];
+            const state = JSON.parse(stateStr);
+            
+            bgType = state.bgType;
+            bgValue = state.bgValue;
+            genStyle = state.genStyle || 'starry';
+            genSeed = state.genSeed || Math.random();
+            selectedId = state.selectedId;
+
+            layers = state.layers.map(savedObj => {
+                if (savedObj.type === 'image') {
+                    const originLayer = layers.find(l => l.id === savedObj.id);
+                    savedObj.content = originLayer ? originLayer.content : null;
+                }
+                return savedObj;
+            }).filter(l => l.type !== 'image' || l.content !== null);
+
+            if (bgType === 'image') {
+                setBackground('image', bgValue.src || bgValue);
+            } else {
+                drawBackground();
+                draw();
+            }
+            updateSelectionUI();
+        }
+
+        function clearCanvas() {
+            layers = [];
+            selectedId = null;
+            bgType = 'color';
+            bgValue = '#C82333';
+            bgImgElement = null;
+            document.getElementById('emptyHint').classList.remove('hidden');
+            draw();
+            saveState();
+            updateSelectionUI();
+        }
+
+        function downloadCard() {
+            const currentSelected = selectedId;
+            selectedId = null;
+            draw();
+
+            try {
+                const link = document.createElement('a');
+                link.download = `我的精美賀卡-${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (err) {
+                console.error(err);
+            }
+
+            selectedId = currentSelected;
+            draw();
+        }
+
+        // ================= STREAMING_CHUNK: 切換分頁控制 =================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn shrink-0 px-4 py-3 rounded-2xl font-black text-lg md:text-xl text-slate-600 hover:bg-amber-50 transition-all duration-200 flex items-center gap-2";
+            });
+
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.className = "tab-btn shrink-0 px-4 py-3 rounded-2xl font-black text-lg md:text-xl transition-all duration-200 flex items-center gap-2 bg-amber-500 text-white shadow-md";
+        }
+
+        function switchBgSubTab(subTabName) {
+            document.querySelectorAll('.bg-sub-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`bg-sub-${subTabName}`).classList.remove('hidden');
+
+            document.getElementById('subtab-photo').className = 'text-slate-600 hover:text-slate-900 flex-1 py-2 rounded-xl text-center font-bold';
+            document.getElementById('subtab-generative').className = 'text-slate-600 hover:text-slate-900 flex-1 py-2 rounded-xl text-center font-bold';
+            document.getElementById('subtab-color').className = 'text-slate-600 hover:text-slate-900 flex-1 py-2 rounded-xl text-center font-bold';
+
+            const activeBtn = document.getElementById(`subtab-${subTabName}`);
+            activeBtn.className = 'bg-white text-slate-800 flex-1 py-2 rounded-xl shadow text-center font-bold';
+
+            // 切換子標籤時，如果是隨機幾何星空，預設套用第一個
+            if (subTabName === 'generative') {
+                setGenerativeBackground(genStyle);
+            }
+        }
+
+        // ================= 「落櫻飛舞」動態特效 =================
+        let effectInterval = null;
+
+        function toggleVisualEffect() {
+            const overlay = document.getElementById('effectOverlay');
+            const btn = document.getElementById('effectBtn');
+            
+            if (overlay.classList.contains('hidden')) {
+                overlay.classList.remove('hidden');
+                btn.className = "bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl shadow text-sm inline-flex items-center gap-2 transition active:scale-95";
+                btn.innerHTML = `<i class="fa-solid fa-circle-pause animate-spin"></i> 關閉「落櫻飛舞」特效`;
+                startSakura();
+            } else {
+                overlay.classList.add('hidden');
+                overlay.innerHTML = '';
+                btn.className = "bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-4 rounded-xl shadow text-sm inline-flex items-center gap-2 transition active:scale-95";
+                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles animate-pulse"></i> 點此開啟「落櫻飛舞」動態特效`;
+                clearInterval(effectInterval);
+            }
+        }
+
+        function startSakura() {
+            const overlay = document.getElementById('effectOverlay');
+            overlay.innerHTML = '';
+            
+            effectInterval = setInterval(() => {
+                if (overlay.classList.contains('hidden')) return;
+                
+                const petal = document.createElement('div');
+                petal.className = 'sakura';
+                
+                const size = Math.random() * 8 + 6;
+                const left = Math.random() * 100;
+                const duration = Math.random() * 4 + 3;
+                
+                petal.style.width = `${size}px`;
+                petal.style.height = `${size * 1.4}px`;
+                petal.style.left = `${left}%`;
+                petal.style.animationDuration = `${duration}s`;
+                
+                overlay.appendChild(petal);
+
+                setTimeout(() => {
+                    petal.remove();
+                }, duration * 1000);
+            }, 250);
+        }
+    </script>
+</body>
+</html>
