@@ -1434,7 +1434,7 @@
 
             try {
                 const link = document.createElement('a');
-                link.download = `我的精美賀卡-${Date.now()}.png`;
+                link.download = `background-${Date.now()}.png`;
                 link.href = canvas.toDataURL('image/png');
                 document.body.appendChild(link);
                 link.click();
