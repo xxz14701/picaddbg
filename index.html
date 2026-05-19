@@ -57,12 +57,12 @@
         </div>
     </header>
 
-    <!-- 主區塊：手機上使用 flex 垂直排列，確保 sticky 置頂有效；電腦上自動切換回 grid 雙欄 -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-2 py-4 md:p-6 flex flex-col lg:grid lg:grid-cols-12 gap-6 items-stretch lg:items-start">
+    <!-- 主區塊：手機版改用 flex-col 讓置頂(sticky)生效，電腦版保持 grid 雙欄 -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-2 py-4 md:p-6 flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:items-start">
         
-        <!-- 左欄預覽區：手機上 sticky 置頂，不阻擋下方選項 -->
-        <section class="lg:col-span-6 flex flex-col items-center sticky top-0 lg:relative z-30 bg-[#fcf9f2] py-2 lg:py-0 border-b-2 lg:border-b-0 border-amber-200/50 lg:border-transparent shadow-md lg:shadow-none w-full">
-            <!-- 畫布容器：維持 square 1:1 比例，在手機上適度收縮大小 (max-w-[260px])，防止佔據過多空間 -->
+        <!-- 左欄預覽區：確保 sticky top-0 且層級夠高 (z-40) -->
+        <section class="lg:col-span-6 flex flex-col items-center sticky top-0 lg:top-6 z-40 bg-[#fcf9f2] lg:bg-transparent py-2 lg:py-0 border-b-2 lg:border-b-0 border-amber-200/50 lg:border-transparent shadow-md lg:shadow-none w-full transition-all">
+            <!-- 畫布容器：維持 square 1:1 比例 -->
             <div class="relative w-full max-w-[260px] sm:max-w-[340px] lg:max-w-[500px] aspect-square bg-white rounded-3xl shadow-lg lg:shadow-2xl border-4 border-amber-300 overflow-hidden flex items-center justify-center">
                 
                 <!-- 櫻花雨動態特效疊加層 (僅預覽用) -->
@@ -95,7 +95,7 @@
             </div>
         </section>
 
-        <!-- 右欄控制面板：可以滑動，並且不會蓋到置頂的預覽畫面 -->
+        <!-- 右欄控制面板：確保加上 w-full 讓手機版撐滿寬度 -->
         <section class="lg:col-span-6 bg-white rounded-3xl shadow-xl p-4 md:p-6 border-2 border-amber-100 flex flex-col gap-6 relative z-10 w-full">
             
             <!-- 大分頁導覽列（字大、點擊範圍大） -->
@@ -127,50 +127,31 @@
                     <button onclick="switchBgSubTab('color')" id="subtab-color" class="text-slate-600 hover:text-slate-900 flex-1 py-2 rounded-xl text-center font-bold">🎨 自訂純色/漸層</button>
                 </div>
 
-                <!-- 次分類 1：照片圖庫 (細分三大類，各10張) -->
+                <!-- 次分類 1：照片圖庫 -->
                 <div id="bg-sub-photo" class="bg-sub-content flex flex-col gap-4">
-                    
-                    <!-- 圖片內部分類頁籤 -->
                     <div class="flex gap-1.5 border-b border-slate-200 pb-1.5 overflow-x-auto no-scrollbar">
                         <button onclick="showImageCategory('natural')" id="btn-cat-natural" class="px-3 py-1.5 rounded-lg text-xs font-black bg-amber-500 text-white shadow-sm shrink-0">⛰️ 自然山水</button>
                         <button onclick="showImageCategory('flower')" id="btn-cat-flower" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0">🌸 吉祥花卉</button>
                         <button onclick="showImageCategory('festive')" id="btn-cat-festive" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0">🏮 節慶古典</button>
                     </div>
-
-                    <!-- 1. 自然山水照片網格 -->
-                    <div id="grid-cat-natural" class="cat-grid grid grid-cols-5 gap-2">
-                        <!-- 由 JS 動態繪製與生成 10 張 -->
-                    </div>
-
-                    <!-- 2. 吉祥花卉照片網格 -->
-                    <div id="grid-cat-flower" class="cat-grid grid grid-cols-5 gap-2 hidden">
-                        <!-- 由 JS 動態繪製與生成 10 張 -->
-                    </div>
-
-                    <!-- 3. 節慶古典照片網格 -->
-                    <div id="grid-cat-festive" class="cat-grid grid grid-cols-5 gap-2 hidden">
-                        <!-- 由 JS 動態繪製與生成 10 張 -->
-                    </div>
+                    <div id="grid-cat-natural" class="cat-grid grid grid-cols-5 gap-2"></div>
+                    <div id="grid-cat-flower" class="cat-grid grid grid-cols-5 gap-2 hidden"></div>
+                    <div id="grid-cat-festive" class="cat-grid grid grid-cols-5 gap-2 hidden"></div>
                 </div>
 
-                <!-- 次分類 2：不風景 (星空與現代幾何、發光泡泡，具有隨機變換功能) -->
+                <!-- 次分類 2：不風景 (星空與現代幾何) -->
                 <div id="bg-sub-generative" class="bg-sub-content hidden flex flex-col gap-4">
                     <div class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200">
                         <span class="text-base font-black text-amber-900 block mb-1">🎲 程式即時變換底圖：</span>
-                        
                         <div class="grid grid-cols-3 gap-2 mb-3">
                             <button onclick="setGenerativeBackground('starry')" id="gen-starry" class="py-3 px-1 rounded-xl border-2 border-slate-300 font-bold text-sm bg-indigo-950 text-indigo-200">🌌 幻彩星空</button>
                             <button onclick="setGenerativeBackground('geometric')" id="gen-geometric" class="py-3 px-1 rounded-xl border-2 border-slate-300 font-bold text-sm bg-teal-50 text-teal-800">📐 炫彩幾何</button>
                             <button onclick="setGenerativeBackground('bubbles')" id="gen-bubbles" class="py-3 px-1 rounded-xl border-2 border-slate-300 font-bold text-sm bg-pink-50 text-pink-700">🫧 絢麗泡泡</button>
                         </div>
-
-                        <!-- 隨機一鍵重新變換大按鈕 -->
                         <button onclick="randomizeGenerative()" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black text-lg rounded-2xl shadow-md hover:from-purple-700 hover:to-indigo-700 transition active:scale-95 flex items-center justify-center gap-2">
                             <i class="fa-solid fa-dice text-2xl animate-spin"></i> 🎲 點此「隨機變換」全新圖樣配置！
                         </button>
                     </div>
-
-                    <!-- 古典雅緻底紋 -->
                     <div>
                         <span class="text-sm font-black text-slate-700 block mb-2"><i class="fa-solid fa-border-all mr-1"></i> 吉祥古典底紋：</span>
                         <div class="grid grid-cols-3 gap-2">
@@ -183,7 +164,6 @@
 
                 <!-- 次分類 3：自訂色彩/雙色漸層 -->
                 <div id="bg-sub-color" class="bg-sub-content hidden flex flex-col gap-4">
-                    <!-- B. 自訂單色 -->
                     <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
                         <span class="text-base font-bold text-amber-800 block mb-2"><i class="fa-solid fa-paint-roller mr-1"></i> 自訂單色底圖：</span>
                         <div class="flex items-center gap-4">
@@ -202,22 +182,20 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- C. 自訂漸層色 -->
                     <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
                         <span class="text-base font-bold text-amber-800 block mb-2"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 自訂雙色漸層：</span>
                         <div class="flex flex-col gap-3">
                             <div class="flex items-center justify-between gap-4">
                                 <div class="flex items-center gap-2">
-                                    <span class="text-xs font-bold text-slate-500">起點顏色:</span>
+                                    <span class="text-xs font-bold text-slate-500">起點:</span>
                                     <input type="color" id="gradColor1" value="#ff7e5f" oninput="applyCustomGradient()" class="w-10 h-10 rounded-lg cursor-pointer border border-slate-300">
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span class="text-xs font-bold text-slate-500">終點顏色:</span>
+                                    <span class="text-xs font-bold text-slate-500">終點:</span>
                                     <input type="color" id="gradColor2" value="#feb47b" oninput="applyCustomGradient()" class="w-10 h-10 rounded-lg cursor-pointer border border-slate-300">
                                 </div>
                                 <div class="flex-1 flex flex-col">
-                                    <span class="text-xs font-bold text-slate-500">漸層方向: <span id="gradAngleVal">135°</span></span>
+                                    <span class="text-xs font-bold text-slate-500">方向: <span id="gradAngleVal">135°</span></span>
                                     <input type="range" id="gradAngle" min="0" max="360" value="135" oninput="applyCustomGradient()" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
                                 </div>
                             </div>
@@ -236,28 +214,22 @@
                 <!-- 自行上傳照片區 -->
                 <div class="bg-amber-50 p-4 rounded-2xl border-2 border-dashed border-amber-300 text-center">
                     <h4 class="text-lg font-bold text-amber-900 mb-1">📸 上傳您的去背圖/生活照</h4>
-                    <p class="text-xs text-amber-700 mb-3">點擊下方大按鈕即可重複上傳照片與點綴小物！</p>
-                    
-                    <label class="cursor-pointer bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-black text-lg py-3.5 px-6 rounded-2xl inline-flex items-center gap-2 shadow-md transition-all">
+                    <label class="cursor-pointer bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-black text-lg py-3.5 px-6 rounded-2xl inline-flex items-center gap-2 shadow-md transition-all mt-2">
                         <i class="fa-solid fa-cloud-arrow-up text-xl animate-bounce"></i> 選擇手機或電腦照片
                         <input type="file" id="imageUpload" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)">
                     </label>
                 </div>
 
                 <!-- 頂級客製化字體設計區 -->
-                <div class="bg-amber-50/50 p-4 rounded-2xl border-2 border-dashed border-amber-200 flex flex-col gap-4">
+                <div class="bg-amber-50/50 p-4 rounded-2xl border-2 border-amber-200 flex flex-col gap-4">
                     <span class="text-lg font-black text-amber-900 block border-b-2 border-amber-200 pb-1">✍️ 文字設定</span>
-                    
-                    <!-- 1. 輸入內容 -->
                     <div>
                         <span class="text-sm font-bold text-slate-600 block mb-1">輸入文字：</span>
                         <input type="text" id="customTextInput" value="早安" placeholder="在此輸入文字..." class="w-full px-4 py-3 border-2 border-amber-300 rounded-xl font-bold text-lg focus:outline-none focus:border-amber-500">
                     </div>
-
-                    <!-- 2. 字體顏色設定 -->
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <span class="text-sm font-bold text-slate-600 block mb-1">文字主要顏色：</span>
+                            <span class="text-sm font-bold text-slate-600 block mb-1">主要顏色：</span>
                             <div class="flex items-center gap-2">
                                 <input type="color" id="textColor" value="#FFD700" class="w-10 h-10 rounded cursor-pointer border border-slate-300">
                                 <span class="text-xs font-bold text-slate-500">主體色</span>
@@ -268,13 +240,11 @@
                             <input type="range" id="textSizeRange" min="30" max="150" value="80" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
                         </div>
                     </div>
-
-                    <!-- 3. 多層外框設定 (第一層描邊/內框) -->
                     <div class="bg-white p-3 rounded-xl border border-amber-200">
                         <div class="flex items-center justify-between mb-2">
                             <label class="flex items-center gap-1.5 cursor-pointer">
                                 <input type="checkbox" id="stroke1Enable" checked class="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500">
-                                <span class="text-sm font-bold text-slate-700">啟用第一層外框 (內層)</span>
+                                <span class="text-sm font-bold text-slate-700">第一層外框 (內層)</span>
                             </label>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
@@ -288,13 +258,11 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- 4. 多層外框設定 (第二層描邊/最外圈) -->
                     <div class="bg-white p-3 rounded-xl border border-amber-200">
                         <div class="flex items-center justify-between mb-2">
                             <label class="flex items-center gap-1.5 cursor-pointer">
                                 <input type="checkbox" id="stroke2Enable" checked class="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500">
-                                <span class="text-sm font-bold text-slate-700">啟用第二層外框 (最外圈)</span>
+                                <span class="text-sm font-bold text-slate-700">第二層外框 (最外)</span>
                             </label>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
@@ -308,19 +276,17 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- 儲存 / 套用 / 新增 按鈕 -->
                     <div class="flex gap-2">
                         <button onclick="addCustomText()" class="flex-1 bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 active:scale-95 text-white font-black text-xl py-3 rounded-xl shadow-md transition-all">
                             ➕ 新增到畫面上
                         </button>
                         <button onclick="updateSelectedText()" id="updateTextBtn" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl shadow-md active:scale-95 text-sm hidden">
-                            💾 更新選中文字
+                            💾 更新文字
                         </button>
                     </div>
                 </div>
 
-                <!-- 預設長輩最愛經典詞彙貼圖 -->
+                <!-- 預設金字貼圖 -->
                 <div>
                     <span class="text-base font-bold text-amber-800 block mb-2"><i class="fa-solid fa-circle-check mr-1"></i> 快速金字貼圖一鍵加入：</span>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -331,7 +297,7 @@
                     </div>
                 </div>
 
-                <!-- 更多裝飾小物 -->
+                <!-- 裝飾小物 -->
                 <div>
                     <span class="text-base font-bold text-amber-800 block mb-2">🌸 點擊加入富貴吉祥裝飾貼圖：</span>
                     <div class="grid grid-cols-6 gap-2">
@@ -355,20 +321,12 @@
             <div id="content-adjust" class="tab-content hidden flex flex-col gap-5">
                 <div>
                     <h3 class="text-xl font-black text-slate-800 mb-1">🎮 微調與調整面板</h3>
-                    <p class="text-sm text-slate-500">
-                        📱 您可以直接在置頂圖片上用手指拖拉、或是拉動<strong>「外圍的藍綠色小圓球」</strong>來直接放大或旋轉喔！
-                    </p>
                 </div>
-
-                <!-- 選擇對象顯示 -->
                 <div class="bg-slate-100 px-4 py-3 rounded-2xl flex items-center justify-between border border-slate-200">
                     <span class="font-bold text-slate-600 text-sm">正在調整的物件：</span>
-                    <span id="selectedLayerName" class="font-black text-amber-600 text-base">無 (請先點擊畫面上物件選取)</span>
+                    <span id="selectedLayerName" class="font-black text-amber-600 text-base">無</span>
                 </div>
-
-                <!-- 微調主控台 -->
                 <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                    <span class="text-sm font-bold text-slate-600 block mb-2 text-center"><i class="fa-solid fa-arrows-up-down-left-right mr-1"></i> 手部顫抖或細微精準調整按鈕：</span>
                     <div class="grid grid-cols-3 gap-3 max-w-[320px] mx-auto w-full">
                         <button onclick="adjustSelected('rotate', -15)" class="h-16 bg-white border-2 border-amber-200 rounded-2xl shadow-sm active:scale-95 flex flex-col items-center justify-center text-amber-700 font-bold">
                             <i class="fa-solid fa-rotate-left text-xl"></i>
@@ -406,7 +364,6 @@
                     </div>
                 </div>
 
-                <!-- 翻轉與置中功能 -->
                 <div class="flex flex-col gap-2">
                     <div class="flex gap-2 justify-center">
                         <button onclick="adjustSelected('flipX')" class="flex-1 py-3 bg-white border-2 border-slate-200 rounded-xl shadow-sm active:scale-95 font-bold text-slate-700 flex items-center justify-center gap-2">
@@ -417,7 +374,7 @@
                         </button>
                     </div>
                     <button onclick="adjustSelected('center')" class="py-3 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-xl shadow-sm active:scale-95 font-bold text-amber-900 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-crosshairs"></i> 將選定物件移到畫布正中央
+                        <i class="fa-solid fa-crosshairs"></i> 移到畫布中央
                     </button>
                 </div>
             </div>
@@ -426,10 +383,7 @@
             <div id="content-layers" class="tab-content hidden flex flex-col gap-4">
                 <div>
                     <h3 class="text-xl font-black text-slate-800 mb-1">🗂️ 圖層與前後順序</h3>
-                    <p class="text-sm text-slate-500">當有許多張照片重疊時，可以在這裡調整哪張在上面、哪張在下面喔！</p>
                 </div>
-
-                <!-- 圖層列表容器 -->
                 <div id="layersList" class="flex flex-col gap-3 max-h-[250px] overflow-y-auto pr-1">
                     <!-- 動態生成圖層項目 -->
                 </div>
@@ -437,10 +391,8 @@
         </section>
     </main>
 
-    <!-- 底部特色介紹與下載區 (強制置中) -->
-    <footer class="bg-amber-100 border-t-4 border-amber-300 py-6 px-4 text-center z-40 relative">
+    <footer class="bg-amber-100 border-t-4 border-amber-300 py-6 px-4 text-center z-40 relative mt-auto">
         <div class="max-w-6xl mx-auto flex flex-col items-center justify-center gap-4">
-            <!-- 超大、超顯眼、超級容易點擊的下載按鈕 (強制置中且限制最大寬度) -->
             <div class="w-full flex flex-col items-center justify-center">
                 <button onclick="downloadCard()" class="w-full max-w-md bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-2xl md:text-3xl px-8 py-5 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center gap-3 active:scale-95 border-b-8 border-green-800">
                     <i class="fa-solid fa-circle-down text-3xl md:text-4xl animate-bounce"></i> 儲存/下載我的美圖
@@ -450,11 +402,9 @@
     </footer>
 
     <script>
-        // ================= 核心狀態與 30 張底圖清單宣告 =================
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
         
-        // 【安全工具】自動將任何 Unsplash 圖片網址格式化為指定寬度
         function formatUnsplashUrl(url, width) {
             if (url && url.includes('images.unsplash.com')) {
                 const baseUrl = url.split('?')[0];
@@ -463,22 +413,20 @@
             return url;
         }
         
-        let bgType = 'color'; // 'color', 'gradient', 'pattern', 'image', 'generative'
-        let bgValue = '#C82333'; // 預設喜慶紅
-        let bgImgElement = null; // 背景圖物件
-        let bgImgName = ''; // 紀錄背景圖名稱
+        let bgType = 'color'; 
+        let bgValue = '#C82333'; 
+        let bgImgElement = null; 
+        let bgImgName = ''; 
         
-        // 星空與幾何隨機變換用狀態
-        let genStyle = 'starry'; // 'starry', 'geometric', 'bubbles'
-        let genSeed = Math.random(); // 種子碼
+        let genStyle = 'starry'; 
+        let genSeed = Math.random(); 
         
-        let layers = []; // 物件圖層陣列
-        let selectedId = null; // 目前選取的圖層 ID
+        let layers = []; 
+        let selectedId = null; 
         
-        let history = []; // 用於「上一步」功能
+        let history = []; 
         
-        // 互動狀態變數
-        let activeInteraction = null; // 'drag', 'scale', 'rotate', null
+        let activeInteraction = null; 
         let dragTarget = null;
         let startX = 0;
         let startY = 0;
@@ -488,7 +436,6 @@
         let dragStartAngle = 0;
         let dragStartDist = 1;
 
-        // 30張高畫質背景圖數據庫 (三個分類，每類10張)
         const imageDatabase = {
             natural: [
                 { title: 'A01', url: 'https://images.unsplash.com/photo-1772424131868-6b9f154b59ce?auto=format&fit=crop&w=800&q=80' },
@@ -528,7 +475,6 @@
             ]
         };
 
-        // 滑桿與色彩監聽事件 (顯示最新數值，並保證長輩操作後即時更新)
         document.getElementById('stroke1Width').addEventListener('input', function(e) {
             document.getElementById('stroke1WidthVal').innerText = e.target.value;
             triggerImmediateTextUpdate();
@@ -544,24 +490,18 @@
         document.getElementById('stroke1Enable').addEventListener('change', triggerImmediateTextUpdate);
         document.getElementById('stroke2Enable').addEventListener('change', triggerImmediateTextUpdate);
 
-        // ================= 初始化與動態渲染背景列表 =================
         window.onload = function() {
-            // 生成 30 張背景圖片按鈕
             renderImageCategoryButtons();
-            // 預設為喜慶紅背景
             setBackground('color', '#C82333');
             saveState();
         };
 
-        // 將 30 張底圖載入到對應的 Tab 中
         function renderImageCategoryButtons() {
             Object.keys(imageDatabase).forEach(category => {
                 const grid = document.getElementById(`grid-cat-${category}`);
                 let html = '';
                 imageDatabase[category].forEach(img => {
-                    // 自動轉為 150 寬度的極速縮圖
                     const thumbUrl = formatUnsplashUrl(img.url, 150);
-                    // 套用時自動轉為 1200 寬度的高清大圖
                     const bigUrl = formatUnsplashUrl(img.url, 1200);
                     html += `
                         <button onclick="setBackground('image', '${bigUrl}', '${img.title}')" class="relative rounded-xl overflow-hidden aspect-square border-4 border-transparent focus:border-amber-500 shadow-sm transition active:scale-95 group">
@@ -574,7 +514,6 @@
             });
         }
 
-        // 切換底圖三大子分類
         function showImageCategory(category) {
             document.querySelectorAll('.cat-grid').forEach(el => el.classList.add('hidden'));
             document.getElementById(`grid-cat-${category}`).classList.remove('hidden');
@@ -587,7 +526,6 @@
             activeBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-black bg-amber-500 text-white shadow-sm shrink-0';
         }
 
-        // ================= 背景設定與 Canvas 即時渲染核心 =================
         function setBackground(type, value, name = '') {
             bgType = type;
             bgValue = value;
@@ -596,7 +534,7 @@
 
             if (type === 'image') {
                 bgImgElement = new Image();
-                bgImgElement.crossOrigin = 'anonymous'; // 避開跨網域
+                bgImgElement.crossOrigin = 'anonymous'; 
                 bgImgElement.onload = function() {
                     draw();
                     saveState();
@@ -635,12 +573,10 @@
             setBackground('gradient', { color1: c1, color2: c2, angle });
         }
 
-        // 設定星空、幾何、泡泡變換
         function setGenerativeBackground(style) {
             bgType = 'generative';
             genStyle = style;
             
-            // 重置樣式按鈕的高亮狀態
             document.getElementById('gen-starry').className = "py-3 px-1 rounded-xl border-2 font-bold text-sm bg-indigo-950 text-indigo-200 border-indigo-500";
             document.getElementById('gen-geometric').className = "py-3 px-1 rounded-xl border-2 font-bold text-sm bg-teal-50 text-teal-800 border-slate-300";
             document.getElementById('gen-bubbles').className = "py-3 px-1 rounded-xl border-2 font-bold text-sm bg-pink-50 text-pink-700 border-slate-300";
@@ -657,14 +593,12 @@
             saveState();
         }
 
-        // 重新獲得隨機變換背景
         function randomizeGenerative() {
             genSeed = Math.random();
             draw();
             saveState();
         }
 
-        // ================= 繪製隨機生成之特殊背景 (星空/幾何/泡泡) =================
         function drawGenerativeBackground(ctx, style, seed) {
             let randomCount = 0;
             function pseudoRandom() {
@@ -673,7 +607,6 @@
             }
 
             if (style === 'starry') {
-                // 1. 夜空深藍紫色漸層
                 const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
                 grad.addColorStop(0, '#0a0b1e');
                 grad.addColorStop(0.5, '#16133a');
@@ -681,7 +614,6 @@
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // 2. 朦朧的星雲光暈
                 for (let i = 0; i < 3; i++) {
                     const cx = pseudoRandom() * canvas.width;
                     const cy = pseudoRandom() * canvas.height;
@@ -695,7 +627,6 @@
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
 
-                // 3. 繁星點點
                 ctx.fillStyle = '#ffffff';
                 for (let i = 0; i < 100; i++) {
                     const x = pseudoRandom() * canvas.width;
@@ -711,7 +642,6 @@
                     ctx.restore();
                 }
 
-                // 4. 吉祥流星
                 ctx.strokeStyle = 'rgba(255,255,255,0.6)';
                 ctx.lineWidth = 1.5;
                 for (let i = 0; i < 3; i++) {
@@ -724,7 +654,6 @@
                 }
             } 
             else if (style === 'geometric') {
-                // 幾何抽象配色
                 ctx.fillStyle = '#f3f4f6';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -761,7 +690,6 @@
                 }
             }
             else if (style === 'bubbles') {
-                // 3. 夢幻漸層發光泡泡
                 const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
                 grad.addColorStop(0, '#fbcfe8');
                 grad.addColorStop(0.5, '#fed7aa');
@@ -798,7 +726,6 @@
             }
         }
 
-        // ================= 基礎背景繪製流程 =================
         function drawBackground() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -907,11 +834,10 @@
             }
         }
 
-        // ================= 新增字體與照片物件邏輯 =================
         function createNewLayer(type, content) {
             return {
                 id: Date.now() + Math.random(),
-                type: type, // 'image', 'text'
+                type: type,
                 content: content,
                 x: canvas.width / 2,
                 y: canvas.height / 2,
@@ -921,8 +847,6 @@
                 width: 200,
                 height: 200,
                 color: '#FFD700',
-                
-                // 客製化描邊屬性
                 stroke1Enabled: true,
                 stroke1Color: '#C82333',
                 stroke1Width: 10,
@@ -968,9 +892,7 @@
 
         function addCustomText() {
             const textVal = document.getElementById('customTextInput').value.trim();
-            if (!textVal) {
-                return;
-            }
+            if (!textVal) return;
 
             const newLayer = createNewLayer('text', textVal);
             newLayer.color = document.getElementById('textColor').value;
@@ -1037,7 +959,46 @@
             draw();
         }
 
-        // ================= 拖曳、雙球(藍綠)縮放與旋轉直覺算法 =================
+        function updateSelectedText() {
+            triggerImmediateTextUpdate();
+            saveState();
+        }
+
+        function addFastText(text, color, strokeColor) {
+            const newLayer = createNewLayer('text', text);
+            newLayer.color = color;
+            newLayer.stroke1Color = strokeColor;
+            newLayer.stroke1Width = 10;
+            newLayer.stroke2Enabled = true;
+            newLayer.stroke2Color = '#000000';
+            newLayer.stroke2Width = 8;
+            newLayer.fontSize = 80;
+            newLayer.width = text.length * 80 * 1.05;
+            newLayer.height = 96;
+
+            layers.push(newLayer);
+            selectedId = newLayer.id;
+            updateSelectionUI();
+            draw();
+            saveState();
+        }
+
+        function addEmojiSticker(emoji) {
+            const newLayer = createNewLayer('text', emoji);
+            newLayer.fontSize = 90;
+            newLayer.width = 110;
+            newLayer.height = 110;
+            newLayer.stroke1Enabled = false;
+            newLayer.stroke2Enabled = false;
+            newLayer.name = `貼圖 ${emoji}`;
+            
+            layers.push(newLayer);
+            selectedId = newLayer.id;
+            updateSelectionUI();
+            draw();
+            saveState();
+        }
+
         function getGlobalCoords(layer, localX, localY) {
             const rad = (layer.rotation * Math.PI) / 180;
             const cos = Math.cos(rad);
@@ -1057,19 +1018,16 @@
             const target = layers.find(l => l.id === selectedId);
             if (!target) return { type: 'bg', target: null };
 
-            // 1. 頂部「綠色旋轉球」
             const rotateHandlePos = getGlobalCoords(target, 0, -target.height/2 - 45);
             if (Math.hypot(coords.x - rotateHandlePos.x, coords.y - rotateHandlePos.y) < 25) {
                 return { type: 'rotate', target: target };
             }
 
-            // 2. 右下角「藍色等比縮放球」
             const scaleHandlePos = getGlobalCoords(target, target.width/2, target.height/2);
             if (Math.hypot(coords.x - scaleHandlePos.x, coords.y - scaleHandlePos.y) < 25) {
                 return { type: 'scale', target: target };
             }
 
-            // 3. 物件主體
             const distToCenter = Math.hypot(coords.x - target.x, coords.y - target.y);
             const maxRadius = Math.max(target.width * Math.abs(target.scaleX), target.height * Math.abs(target.scaleY)) / 2 + 15;
             
@@ -1077,7 +1035,6 @@
                 return { type: 'drag', target: target };
             }
 
-            // 4. 點擊其他圖層切換
             for (let i = layers.length - 1; i >= 0; i--) {
                 const layer = layers[i];
                 const layerDist = Math.hypot(coords.x - layer.x, coords.y - layer.y);
@@ -1188,7 +1145,6 @@
         canvas.addEventListener('touchmove', handleMove, { passive: false });
         window.addEventListener('touchend', handleEnd);
 
-        // ================= 繪製主畫布流程與立體文字 =================
         function draw() {
             drawBackground();
 
@@ -1214,37 +1170,32 @@
                     ctx.lineJoin = 'round';
                     ctx.miterLimit = 2;
 
-                    // 1. 最下層：第二外框 (最寬)
                     if (layer.stroke2Enabled) {
                         ctx.strokeStyle = layer.stroke2Color;
                         ctx.lineWidth = layer.stroke1Width + layer.stroke2Width;
                         ctx.strokeText(layer.content, 0, 0);
                     }
 
-                    // 2. 中間層：第一外框
                     if (layer.stroke1Enabled) {
                         ctx.strokeStyle = layer.stroke1Color;
                         ctx.lineWidth = layer.stroke1Width;
                         ctx.strokeText(layer.content, 0, 0);
                     }
 
-                    // 3. 最上層：文字主體填充
                     ctx.fillStyle = layer.color;
                     ctx.fillText(layer.content, 0, 0);
                 }
 
-                // 選取狀態之虛線框線與彩色操作大球
                 if (layer.id === selectedId) {
-                    ctx.strokeStyle = '#f97316'; // 醒目橘色框
+                    ctx.strokeStyle = '#f97316'; 
                     ctx.lineWidth = 3;
                     ctx.setLineDash([8, 6]);
                     ctx.strokeRect(-layer.width/2 - 10, -layer.height/2 - 10, layer.width + 20, layer.height + 20);
-                    ctx.setLineDash([]); // 還原實線
+                    ctx.setLineDash([]); 
 
                     const sw = layer.width/2;
                     const sh = layer.height/2;
 
-                    // 繪製頂部旋轉連接線
                     ctx.beginPath();
                     ctx.moveTo(0, -sh - 10);
                     ctx.lineTo(0, -sh - 45);
@@ -1252,7 +1203,6 @@
                     ctx.lineWidth = 2.5;
                     ctx.stroke();
 
-                    // 頂部旋轉圓球 (綠色)
                     ctx.beginPath();
                     ctx.arc(0, -sh - 45, 14, 0, Math.PI * 2);
                     ctx.fillStyle = '#22c55e';
@@ -1261,7 +1211,6 @@
                     ctx.fill();
                     ctx.stroke();
 
-                    // 右下縮放圓球 (藍色)
                     ctx.beginPath();
                     ctx.arc(sw, sh, 14, 0, Math.PI * 2);
                     ctx.fillStyle = '#3b82f6';
@@ -1277,7 +1226,6 @@
             renderLayersUI();
         }
 
-        // ================= 微調面板與圖層運作 =================
         function updateSelectionUI() {
             const target = layers.find(l => l.id === selectedId);
             const textEl = document.getElementById('selectedLayerName');
@@ -1293,9 +1241,7 @@
 
         function adjustSelected(action, value) {
             const target = layers.find(l => l.id === selectedId);
-            if (!target) {
-                return;
-            }
+            if (!target) return;
 
             if (action === 'move') {
                 target.x += value.x;
@@ -1403,7 +1349,6 @@
             saveState();
         }
 
-        // ================= 歷史與儲存復原機制 =================
         function saveState() {
             const serialized = {
                 bgType: bgType,
@@ -1441,9 +1386,7 @@
         }
 
         function undo() {
-            if (history.length <= 1) {
-                return;
-            }
+            if (history.length <= 1) return;
             history.pop();
             const stateStr = history[history.length - 1];
             const state = JSON.parse(stateStr);
@@ -1503,7 +1446,6 @@
             draw();
         }
 
-        // ================= 切換分頁控制 =================
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1531,7 +1473,6 @@
             }
         }
 
-        // ================= 「落櫻飛舞」動態特效 =================
         let effectInterval = null;
 
         function toggleVisualEffect() {
