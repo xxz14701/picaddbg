@@ -57,8 +57,8 @@
         </div>
     </header>
 
-    <!-- 主區塊：左右分欄，左邊是畫布（手機上置頂），右邊是好讀的大控制面板 -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-2 py-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <!-- 主區塊：手機上使用 flex 垂直排列，確保 sticky 置頂有效；電腦上自動切換回 grid 雙欄 -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-2 py-4 md:p-6 flex flex-col lg:grid lg:grid-cols-12 gap-6 items-stretch lg:items-start">
         
         <!-- 左欄預覽區：手機上 sticky 置頂，不阻擋下方選項 -->
         <section class="lg:col-span-6 flex flex-col items-center sticky top-0 lg:relative z-30 bg-[#fcf9f2] py-2 lg:py-0 border-b-2 lg:border-b-0 border-amber-200/50 lg:border-transparent shadow-md lg:shadow-none w-full">
@@ -96,7 +96,7 @@
         </section>
 
         <!-- 右欄控制面板：可以滑動，並且不會蓋到置頂的預覽畫面 -->
-        <section class="lg:col-span-6 bg-white rounded-3xl shadow-xl p-4 md:p-6 border-2 border-amber-100 flex flex-col gap-6 relative z-10">
+        <section class="lg:col-span-6 bg-white rounded-3xl shadow-xl p-4 md:p-6 border-2 border-amber-100 flex flex-col gap-6 relative z-10 w-full">
             
             <!-- 大分頁導覽列（字大、點擊範圍大） -->
             <div class="flex border-b-4 border-amber-100 pb-2 overflow-x-auto no-scrollbar gap-2">
@@ -245,7 +245,7 @@
                 </div>
 
                 <!-- 頂級客製化字體設計區 -->
-                <div class="bg-amber-50/50 p-4 rounded-2xl border-2 border-amber-200 flex flex-col gap-4">
+                <div class="bg-amber-50/50 p-4 rounded-2xl border-2 border-dashed border-amber-200 flex flex-col gap-4">
                     <span class="text-lg font-black text-amber-900 block border-b-2 border-amber-200 pb-1">✍️ 文字設定</span>
                     
                     <!-- 1. 輸入內容 -->
@@ -1035,46 +1035,6 @@
             activeLayer.name = `文字「${activeLayer.content}」`;
 
             draw();
-        }
-
-        function updateSelectedText() {
-            triggerImmediateTextUpdate();
-            saveState();
-        }
-
-        function addFastText(text, color, strokeColor) {
-            const newLayer = createNewLayer('text', text);
-            newLayer.color = color;
-            newLayer.stroke1Color = strokeColor;
-            newLayer.stroke1Width = 10;
-            newLayer.stroke2Enabled = true;
-            newLayer.stroke2Color = '#000000';
-            newLayer.stroke2Width = 8;
-            newLayer.fontSize = 80;
-            newLayer.width = text.length * 80 * 1.05;
-            newLayer.height = 96;
-
-            layers.push(newLayer);
-            selectedId = newLayer.id;
-            updateSelectionUI();
-            draw();
-            saveState();
-        }
-
-        function addEmojiSticker(emoji) {
-            const newLayer = createNewLayer('text', emoji);
-            newLayer.fontSize = 90;
-            newLayer.width = 110;
-            newLayer.height = 110;
-            newLayer.stroke1Enabled = false;
-            newLayer.stroke2Enabled = false;
-            newLayer.name = `貼圖 ${emoji}`;
-            
-            layers.push(newLayer);
-            selectedId = newLayer.id;
-            updateSelectionUI();
-            draw();
-            saveState();
         }
 
         // ================= 拖曳、雙球(藍綠)縮放與旋轉直覺算法 =================
