@@ -102,38 +102,38 @@
             <!-- 大分頁導覽列（字大、點擊範圍大） -->
             <div class="flex border-b-4 border-amber-100 pb-2 overflow-x-auto no-scrollbar gap-2">
                 <button onclick="switchTab('bg')" id="tab-bg" class="tab-btn active shrink-0 px-4 py-3 rounded-2xl font-black text-lg md:text-xl transition-all duration-200 flex items-center gap-2 bg-amber-500 text-white shadow-md">
-                    🖼️ 設背景
+                    🖼️ 背景
                 </button>
                 <button onclick="switchTab('sticker')" id="tab-sticker" class="tab-btn shrink-0 px-4 py-3 rounded-2xl font-black text-lg md:text-xl text-slate-600 hover:bg-amber-50 transition-all duration-200 flex items-center gap-2">
-                    ✨ 加字與圖
+                    ✨ 加字
                 </button>
                 <button onclick="switchTab('adjust')" id="tab-adjust" class="tab-btn shrink-0 px-4 py-3 rounded-2xl font-black text-lg md:text-xl text-slate-600 hover:bg-amber-50 transition-all duration-200 flex items-center gap-2">
-                    🎮 調整大小
+                    🎮 調整
                 </button>
                 <button onclick="switchTab('layers')" id="tab-layers" class="tab-btn shrink-0 px-4 py-3 rounded-2xl font-black text-lg md:text-xl text-slate-600 hover:bg-amber-50 transition-all duration-200 flex items-center gap-2">
-                    🗂️ 圖層管理
+                    🗂️ 圖層
                 </button>
             </div>
 
             <!-- ================= 背景設定分頁 ================= -->
             <div id="content-bg" class="tab-content flex flex-col gap-5">
                 <div>
-                    <h3 class="text-xl font-black text-slate-800 mb-1">🎁 第一步：選擇或自訂您的漂亮底圖</h3>
+                    <h3 class="text-xl font-black text-slate-800 mb-1">選擇底圖</h3>
                 </div>
 
                 <!-- 背景分類大頁籤 (圖片/顏色/幾何星空) -->
                 <div class="flex bg-slate-100 p-1.5 rounded-2xl gap-2 text-sm font-bold">
-                    <button onclick="switchBgSubTab('photo')" id="subtab-photo" class="bg-white text-slate-800 flex-1 py-2 rounded-xl shadow text-center font-bold">🏞️ 照片圖庫</button>
-                    <button onclick="switchBgSubTab('generative')" id="subtab-generative" class="text-slate-600 hover:text-slate-900 flex-1 py-2 rounded-xl text-center font-bold">✨ 星空幾何</button>
-                    <button onclick="switchBgSubTab('color')" id="subtab-color" class="text-slate-600 hover:text-slate-900 flex-1 py-2 rounded-xl text-center font-bold">🎨 自訂純色/漸層</button>
+                    <button onclick="switchBgSubTab('photo')" id="subtab-photo" class="bg-white text-slate-800 flex-1 py-2 rounded-xl shadow text-center font-bold">🏞️ 照片</button>
+                    <button onclick="switchBgSubTab('generative')" id="subtab-generative" class="text-slate-600 hover:text-slate-900 flex-1 py-2 rounded-xl text-center font-bold">✨ 幾何</button>
+                    <button onclick="switchBgSubTab('color')" id="subtab-color" class="text-slate-600 hover:text-slate-900 flex-1 py-2 rounded-xl text-center font-bold">🎨 純色/漸層</button>
                 </div>
 
                 <!-- 次分類 1：照片圖庫 -->
                 <div id="bg-sub-photo" class="bg-sub-content flex flex-col gap-4">
                     <div class="flex gap-1.5 border-b border-slate-200 pb-1.5 overflow-x-auto no-scrollbar">
-                        <button onclick="showImageCategory('natural')" id="btn-cat-natural" class="px-3 py-1.5 rounded-lg text-xs font-black bg-amber-500 text-white shadow-sm shrink-0">⛰️ 自然山水</button>
-                        <button onclick="showImageCategory('flower')" id="btn-cat-flower" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0">🌸 吉祥花卉</button>
-                        <button onclick="showImageCategory('festive')" id="btn-cat-festive" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0">🏮 節慶古典</button>
+                        <button onclick="showImageCategory('natural')" id="btn-cat-natural" class="px-3 py-1.5 rounded-lg text-xs font-black bg-amber-500 text-white shadow-sm shrink-0">⛰️ A</button>
+                        <button onclick="showImageCategory('flower')" id="btn-cat-flower" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0">🌸 B</button>
+                        <button onclick="showImageCategory('festive')" id="btn-cat-festive" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-200 text-slate-700 hover:bg-slate-300 shrink-0">🏮 C</button>
                     </div>
                     <div id="grid-cat-natural" class="cat-grid grid grid-cols-5 gap-2"></div>
                     <div id="grid-cat-flower" class="cat-grid grid grid-cols-5 gap-2 hidden"></div>
@@ -143,14 +143,14 @@
                 <!-- 次分類 2：不風景 (星空與現代幾何) -->
                 <div id="bg-sub-generative" class="bg-sub-content hidden flex flex-col gap-4">
                     <div class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200">
-                        <span class="text-base font-black text-amber-900 block mb-1">🎲 程式即時變換底圖：</span>
+                       
                         <div class="grid grid-cols-3 gap-2 mb-3">
                             <button onclick="setGenerativeBackground('starry')" id="gen-starry" class="py-3 px-1 rounded-xl border-2 border-slate-300 font-bold text-sm bg-indigo-950 text-indigo-200">🌌 幻彩星空</button>
                             <button onclick="setGenerativeBackground('geometric')" id="gen-geometric" class="py-3 px-1 rounded-xl border-2 border-slate-300 font-bold text-sm bg-teal-50 text-teal-800">📐 炫彩幾何</button>
                             <button onclick="setGenerativeBackground('bubbles')" id="gen-bubbles" class="py-3 px-1 rounded-xl border-2 border-slate-300 font-bold text-sm bg-pink-50 text-pink-700">🫧 絢麗泡泡</button>
                         </div>
                         <button onclick="randomizeGenerative()" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black text-lg rounded-2xl shadow-md hover:from-purple-700 hover:to-indigo-700 transition active:scale-95 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-dice text-2xl animate-spin"></i> 🎲 點此「隨機變換」全新圖樣配置！
+                            <i class="fa-solid fa-dice text-2xl animate-spin"></i> 🎲 點此「隨機變換」
                         </button>
                     </div>
                     <div>
@@ -396,7 +396,7 @@
         <div class="max-w-6xl mx-auto flex flex-col items-center justify-center gap-4">
             <div class="w-full flex flex-col items-center justify-center">
                 <button onclick="downloadCard()" class="w-full max-w-md bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-2xl md:text-3xl px-8 py-5 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center gap-3 active:scale-95 border-b-8 border-green-800">
-                    <i class="fa-solid fa-circle-down text-3xl md:text-4xl animate-bounce"></i> 儲存/下載我的美圖
+                    <i class="fa-solid fa-circle-down text-3xl md:text-4xl animate-bounce"></i> 儲存/下載
                 </button>
             </div>
         </div>
